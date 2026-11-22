@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "macros.html" import scan_form with context %}
+{% set scan_type = "email" %}
+{% block hero %}{% endblock %}
+{% block content %}
+{% call scan_form("email", "Email address", "name@example.com",
+    "XposedOrNot public email exposure lookup; no API key is required.",
+    "XposedOrNot") %}
+  Check whether an email address appears in exposure records available to XposedOrNot.
+  In live mode, the address is sent to XposedOrNot over HTTPS; this app stores it masked.
+  Only check addresses you own or are authorised to assess.
+{% endcall %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/scan_form.js') }}"></script>{% endblock %}
