@@ -26,6 +26,16 @@ jobs:
         run: |
           python tests/build_demo_benchmark.py | tee benchmark-summary.txt
           python tests/evaluate_osint.py tests/benchmark_demo_results.csv
+      - name: Print measured demo benchmark rows
+        run: cat tests/benchmark_demo_results.csv
+      - name: Measure local HTTP demo response times
+        run: |
+          set -e
+          python app.py > /tmp/reconlens-app.log 2>&1 &
+          APP_PID=$!
+          trap "kill $APP_PID || true" EXIT
+          sleep 3
+          python tests/measure_performance.py --runs 2 | tee http-demo-performance.txt
       - name: Upload verification evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -35,4 +45,5 @@ jobs:
             pytest-summary.txt
             benchmark-summary.txt
             tests/benchmark_demo_results.csv
+            http-demo-performance.txt
           if-no-files-found: warn
