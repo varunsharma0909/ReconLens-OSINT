@@ -51,8 +51,19 @@ def category_for(f: dict) -> str:
     return "domain_security"
 
 
-def compute_score(findings: list[dict]) -> dict:
-    grouped: dict[str, list[dict]] = {k: [] for k in CATEGORY_WEIGHTS}
+def compute_score(findings: list[dict], *, weights: dict[str, int] | None = None) -> dict:
+    """Calculate exposure using default or explicitly supplied sensitivity budgets.
+
+    Overrides exist for offline research, not automatic calibration.
+    Category budgets must be non-negative integers and total 100.
+    """
+    if weights is None:
+        weights = CATEGORY_WEIGHTS
+    elif (set(weights) != set(CATEGORY_WEIGHTS)
+          or any(type(value) is not int or value < 0 for value in weights.values())
+          or sum(weights.values()) != 100):
+        raise ValueError("Weights require original five keys and non-negative integer values totalling 100")
+    grouped: dict[str, list[dict]] = {k: [] for k in weights}
     counts = {s: 0 for s in ("confirmed", "not_found", "inconclusive", "error")}
     for finding in findings:
         status = finding.get("status", "error")
@@ -63,7 +74,7 @@ def compute_score(findings: list[dict]) -> dict:
     category_breakdown = {}
     breakdown = []
     total = 0.0
-    for category, weight in CATEGORY_WEIGHTS.items():
+    for category, weight in weights.items():
         # Distinct confirmed findings have diminishing marginal contribution;
         # duplicates from the same code do not multiply the score linearly.
         unique = {}
@@ -98,13 +109,14 @@ def compute_score(findings: list[dict]) -> dict:
     score = min(100, round(total))
     return {
         "score": score, "raw_total": round(total, 2), "level": level_for(score),
-        "method": ("Weighted heuristic: category budgets are malware/URL 30, IP abuse 25, "
-                   "email exposure 20, domain security 15, threat intelligence 10 (total 100). "
+        "method": (f"Weighted heuristic: category budgets are malware/URL {weights['malware_url']}, "
+                   f"IP abuse {weights['ip_abuse']}, email exposure {weights['email_exposure']}, "
+                   f"domain security {weights['domain_security']}, threat intelligence {weights['threat_intel']} (total 100). "
                    "Only confirmed findings count. Severity multipliers: high 1.0, medium 0.65, "
                    "low 0.30, info 0. Duplicate codes count once; distinct indicators use "
                    "diminishing contributions (60%, 20%, 10%, then 5% of category budget). "
                    "Each category is capped at its weight. This is a heuristic, not a probability."),
-        "weights": CATEGORY_WEIGHTS, "severity_factors": SEVERITY_FACTORS,
+        "weights": dict(weights), "severity_factors": SEVERITY_FACTORS,
         "category_breakdown": category_breakdown,
         "breakdown": breakdown, "status_counts": counts,
         "calibration_note": "Weights require validation against a labelled corpus; do not interpret as breach probability.",
