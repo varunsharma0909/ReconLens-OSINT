@@ -106,3 +106,49 @@ Evidence: [GitHub Actions verification run #45222389273](https://github.com/varu
 | AbuseIPDB | Abuse-report reputation for public IP addresses | Reports and confidence scores are not malware confirmation |
 | SpiderFoot | Broader modular OSINT collection and pivots | Feature scope differs; no comparative accuracy measured |
 
+
+## 7. Category-weight sensitivity analysis (fictional fixtures)
+
+The score weights are **design assumptions**, not a calibrated risk predictor. To
+measure how sensitive the current algorithm is to those choices, the project
+rescored the same eight fictional demo scans with the **same confirmed
+findings** under seven category-budget schedules (baseline plus six
+alternatives). No live API response was changed; all budgets still sum to 100.
+
+Reproduce from the repository root:
+
+```bash
+python tests/score_sensitivity.py
+```
+
+This invokes the actual `compute_score()` function through its explicit,
+validated `weights` argument and saves all **56 individual results** to
+`tests/score_sensitivity_results.csv`. The default budgets remain unchanged
+in production. [GitHub Actions run 45225389327](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45225389327)
+successfully executed the analysis on 23 November 2026 and preserved the CSV
+as a workflow artifact.
+
+| Weight scenario | Maximum absolute score change (points) | Mean absolute change (8 fixtures) | Risk-level changes |
+|---|---:|---:|---:|
+| Baseline (30/25/20/15/10) | 0 | 0.00 | 0 |
+| Malware/URL +20% relative | 4 | 0.88 | 0 |
+| Malware/URL −20% relative | 5 | 0.88 | 1 |
+| IP abuse +20% relative | 2 | 0.38 | 0 |
+| Email exposure +20% relative | 2 | 0.50 | 0 |
+| Domain security +20% relative | 2 | 0.75 | 0 |
+| Threat intelligence +50% relative | 2 | 0.38 | 0 |
+
+Budget order in the table: malware/URL, IP abuse, email exposure, domain
+security and threat intelligence. Increasing one budget requires decreasing
+other budgets to preserve the total of 100.
+
+**Finding:** One alternative caused a risk-level change among the eight
+fictional fixtures. Consequently, even a small change to a category weight
+can move a result across a threshold. The mean changes are not statistical
+confidence intervals and cannot be generalised to real-world targets.
+
+**Limitation:** This is **sensitivity analysis, not calibration**. Calibrating
+would require independently labelled authorised real-world targets,
+measuring error costs and updating weights against held-out data. A
+category-weight sensitivity experiment alone cannot validate accuracy,
+predict compromise, or demonstrate superiority to other tools.
