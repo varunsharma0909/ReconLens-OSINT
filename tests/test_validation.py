@@ -44,6 +44,9 @@ def test_emails():
 def test_reputation_targets():
     assert validate_reputation_target("8.8.8.8") == "8.8.8.8"
     assert validate_reputation_target("Example.com") == "example.com"
+    assert validate_reputation_target("A" * 32) == "a" * 32
+    assert validate_reputation_target("B" * 40) == "b" * 40
+    assert validate_reputation_target("C" * 64) == "c" * 64
     url = "https://example.com/login?next=/home"
     assert validate_reputation_target(url) == url
     for bad in ["192.168.1.10", "127.0.0.1", "10.0.0.5", "http://127.0.0.1/admin",
@@ -62,6 +65,9 @@ def test_mask_email():
     ("https://phish-login.demo-corp.test/login", "reputation"),
     ("8.8.8.8", "reputation"),
     ("2001:4860:4860::8888", "reputation"),
+    ("a" * 32, "reputation"),
+    ("b" * 40, "reputation"),
+    ("c" * 64, "reputation"),
     ("192.168.1.10", "reputation"),          # detected, then rejected by the validator
     ("demo-corp.test", "domain"),
     ("www.example.com/", "domain"),
