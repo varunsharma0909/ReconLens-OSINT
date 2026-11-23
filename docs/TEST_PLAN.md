@@ -29,53 +29,53 @@ authorised to assess.
 | ID | Feature | Input / steps | Expected result | Actual result | Pass/Fail |
 |---|---|---|---|---|---|
 | **Functional - domain** |||||||
-| F-01 | Domain demo | Demo mode, `demo-corp.test` | Score 10 Low (current weighted heuristic); RDAP, DNS, CT sections; verify individual findings | Not executed | Pending |
-| F-02 | Domain demo, strong | Demo mode, `secure-shop.test` | Score 0 Low; inspect SPF/DMARC/CAA and DNSSEC findings | Not executed | Pending |
+| F-01 | Domain demo | Demo mode, `demo-corp.test` | Score 10 Low (current weighted heuristic); RDAP, DNS, CT sections; verify individual findings | HTTP 201, score 10; expected 10 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| F-02 | Domain demo, strong | Demo mode, `secure-shop.test` | Score 0 Low; inspect SPF/DMARC/CAA and DNSSEC findings | HTTP 201, score 0; expected 0 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | F-03 | Domain live | Live, tick authorisation, `example.com` | Registrar and dates from RDAP; DNS records listed; CT section shows hostnames or a labelled crt.sh error | Not executed | Pending |
 | F-04 | Domain live, own domain | Live, a domain you own | Findings match what you know about the domain's DNS/registration | Not executed | Pending |
 | F-05 | Non-existent domain | Live, `this-domain-should-not-exist-12345.com` | RDAP "not found", DNS NXDOMAIN (not_found), no crash | Not executed | Pending |
 | F-06 | URL input accepted | Live, `https://www.example.com/path?x=1` | Analysed as `www.example.com` | Not executed | Pending |
 | **Functional - username** |||||||
-| F-07 | Username demo | Demo, `demo_analyst` | Score 7 Low; inspect profile-status counts and username-reuse warning | Not executed | Pending |
-| F-08 | Username demo, low footprint | Demo, `ghost_user_404` | 0 found, score 0 | Not executed | Pending |
+| F-07 | Username demo | Demo, `demo_analyst` | Score 7 Low; inspect profile-status counts and username-reuse warning | HTTP 201, score 7; expected 7 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| F-08 | Username demo, low footprint | Demo, `ghost_user_404` | 0 found, score 0 | HTTP 201, score 0; expected 0 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | F-09 | Username live, own handle | Live, your own username | Known accounts appear under "Profile found"; blocked platforms under "Inconclusive", never "found" | Not executed | Pending |
 | F-10 | Username live, random | Live, a random 20-character handle | Mostly "Not found"; none falsely "found" (record any false positives) | Not executed | Pending |
 | **Functional - email** |||||||
-| F-11 | Email demo | Demo, `alice@demo-corp.test` | Score 12 Low; fictional exposure findings; stored as `a***@demo-corp.test` | Not executed | Pending |
+| F-11 | Email demo | Demo, `alice@demo-corp.test` | Score 12 Low; fictional exposure findings; stored as `a***@demo-corp.test` | HTTP 201, score 12; expected 12 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | F-12 | Email live, XposedOrNot test key | Live, `account-exists@XposedOrNot-integration-tests.com` | Source shows "(official test key)"; at least one breach listed | Not executed | Pending |
 | F-13 | Email live, test "no data" | Live, `opt-out@XposedOrNot-integration-tests.com` (XposedOrNot-defined test account; see the XposedOrNot API docs for the current list) | "Not found in any known breach" (not_found). If XposedOrNot's test data differs, record what it returns | Not executed | Pending |
 | F-14 | Email live, real address without key | Live, your own address | Public XposedOrNot is keyless; observe and record returned status or provider error | Not executed | Pending |
 | **Functional - reputation** |||||||
-| F-15 | Reputation demo | Demo, `phish-login.demo-corp.test` | Score 23 Moderate; malicious engine detections and verdict chart | Not executed | Pending |
-| F-16 | Reputation live without key | Live, `example.com`, remove all applicable reputation keys | HTTP 400 `reputation_keys_missing` | Not executed | Pending |
+| F-15 | Reputation demo | Demo, `phish-login.demo-corp.test` | Score 23 Moderate; malicious engine detections and verdict chart | HTTP 201, score 23; expected 23 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| F-16 | Reputation live without key | Live, `example.com`, remove all applicable reputation keys | HTTP 400 `reputation_keys_missing` | No configured reputation keys: HTTP 400 reputation_keys_missing ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | F-17 | Reputation live with key (optional) | Live, `example.com` with a configured compatible reputation key | Provider findings or labelled no-match/error; reputation is not proof of safety | Not executed | Pending |
 | **Summary, recommendations, reports** |||||||
 | F-18 | Score breakdown | Open "How the score was calculated" | Sum of listed points equals the score (cap 100) | Not executed | Pending |
 | F-19 | Recommendations | After F-01 | Each recommendation shows "Because:" linked to a confirmed finding; baseline items listed | Not executed | Pending |
-| F-20 | PDF export | Download PDF for F-01 | Opens; contains summary, score method, sources, findings with timestamps, recommendations, limitations, appendix tables | Not executed | Pending |
-| F-21 | CSV export | Download CSV for F-01, open in Excel | Sections SCAN SUMMARY, SOURCES, FINDINGS, RECOMMENDATIONS, LIMITATIONS | Not executed | Pending |
-| F-22 | History | Scan history page | All scans newest first; filter by module works | Not executed | Pending |
-| F-23 | Delete scan | Delete a scan in history | Disappears; `/scan/<id>` returns 404 | Not executed | Pending |
+| F-20 | PDF export | Download PDF for F-01 | Opens; contains summary, score method, sources, findings with timestamps, recommendations, limitations, appendix tables | PDF HTTP 200, starts with PDF signature ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| F-21 | CSV export | Download CSV for F-01, open in Excel | Sections SCAN SUMMARY, SOURCES, FINDINGS, RECOMMENDATIONS, LIMITATIONS | CSV HTTP 200, nonempty ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| F-22 | History | Scan history page | All scans newest first; filter by module works | History includes demo scan id 7 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| F-23 | Delete scan | Delete a scan in history | Disappears; `/scan/<id>` returns 404 | DELETE HTTP 200 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | **Invalid input** |||||||
 | V-01 | Empty input | Run with empty field | "Enter a value to analyse." | Not executed | Pending |
-| V-02 | Bad domain | `exa mple..com` | 400 `invalid_input` | Not executed | Pending |
-| V-03 | IP as domain | `8.8.8.8` on domain page | 400 "enter a domain name, not an IP" | Not executed | Pending |
-| V-04 | Script injection | `<script>alert(1)</script>` | 400 `invalid_input`; nothing executes | Not executed | Pending |
-| V-05 | Private IP | `192.168.1.1` on reputation page | 400 private address rejected | Not executed | Pending |
-| V-06 | Non-http URL | `ftp://example.com/file` | 400 | Not executed | Pending |
-| V-07 | Demo mode, real target | Demo, `example.com` | 400 `not_a_demo_target` with demo list | Not executed | Pending |
-| V-08 | Non-JSON body | `curl -X POST .../api/scan/domain -d "target=x"` | 415 | Not executed | Pending |
-| V-09 | Smart search API | `POST /api/scan/auto` with `alice@demo-corp.test`, demo | 201, `scan.scan_type` = `email` (automated: `test_auto_scan_runs_the_detected_module`) | Not executed | Pending |
+| V-02 | Bad domain | `exa mple..com` | 400 `invalid_input` | HTTP 400; expected 400 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-03 | IP as domain | `8.8.8.8` on domain page | 400 "enter a domain name, not an IP" | HTTP 400; expected 400 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-04 | Script injection | `<script>alert(1)</script>` | 400 `invalid_input`; nothing executes | HTTP 400; expected 400 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-05 | Private IP | `192.168.1.1` on reputation page | 400 private address rejected | HTTP 400; expected 400 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-06 | Non-http URL | `ftp://example.com/file` | 400 | HTTP 400; expected 400 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-07 | Demo mode, real target | Demo, `example.com` | 400 `not_a_demo_target` with demo list | HTTP 400; expected 400 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-08 | Non-JSON body | `curl -X POST .../api/scan/domain -d "target=x"` | 415 | Non-JSON HTTP 415 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
+| V-09 | Smart search API | `POST /api/scan/auto` with `alice@demo-corp.test`, demo | 201, `scan.scan_type` = `email` (automated: `test_auto_scan_runs_the_detected_module`) | Smart search HTTP 201 type=email ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | **Safeguards and application security** |||||||
 | S-01 | Authorisation required (UI) | Live mode, untick box, Run | Error message; no request sent | Not executed | Pending |
-| S-02 | Authorisation required (API) | curl live request without `"authorized": true` | 403 `authorization_required` | Not executed | Pending |
+| S-02 | Authorisation required (API) | curl live request without `"authorized": true` | 403 `authorization_required` | Unauthorised live HTTP 403 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | S-03 | Live mode disabled | `ALLOW_LIVE_MODE=false`, restart, try live | Switch disabled; API 403 `live_disabled` | Not executed | Pending |
 | S-04 | Authorised email domains | `AUTHORIZED_EMAIL_DOMAINS=mycollege.edu` + XposedOrNot key; check another domain | 403 `domain_not_authorised` | Not executed | Pending |
-| S-05 | Security headers | Browser dev tools → Network → response headers | CSP, X-Frame-Options DENY, nosniff, Referrer-Policy present | Not executed | Pending |
+| S-05 | Security headers | Browser dev tools → Network → response headers | CSP, X-Frame-Options DENY, nosniff, Referrer-Policy present | CSP / X-Frame-Options / nosniff response headers ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | S-06 | Secrets not exposed | Search source, logs, PDF/CSV for your API key | Key not found anywhere except `.env` | Not executed | Pending |
-| S-07 | Email masking | Check history, `logs/app.log`, CSV after F-11 | Only `a***@...` appears | Not executed | Pending |
+| S-07 | Email masking | Check history, `logs/app.log`, CSV after F-11 | Only `a***@...` appears | Stored result email masked: a***@demo-corp.test ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | S-08 | CSV formula injection | Covered by automated test `test_csv_formula_injection_is_neutralised` | Cells starting with `=,+,-,@` prefixed with `'` | Not executed | Pending |
-| S-09 | Unknown API path | GET `/api/xyz` | 404 JSON error, no stack trace | Not executed | Pending |
+| S-09 | Unknown API path | GET `/api/xyz` | 404 JSON error, no stack trace | Unknown API HTTP 404 ([CI run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799)) | Pass (automated API) |
 | S-10 | Localhost binding (local only) | With `python app.py` on a laptop, try another device | Not reachable in local mode; Render uses Gunicorn and is deliberately public | Not executed | Pending |
 | S-11 | Email masked in console log | Smart-search an email address, look at the terminal running `app.py` | Request line shows `a***%40domain`, never the full address | Not executed | Pending |
 | S-12 | TLS SSRF / DNS rebinding | Automated: `test_tls_refuses_every_non_public_address`, `test_tls_connects_to_the_checked_address` | Private, shared, multicast and IPv4-mapped addresses skipped; connection goes to the vetted IP | Not executed | Pending |
@@ -133,3 +133,8 @@ Compute these from **your own** test results. Do not estimate.
 - **Eight demo-case fixture benchmark:** 4 TP, 0 FP, 4 TN, 0 FN. Measured Flask test-client response times median **3.9 ms**, maximum **20.8 ms** in the same run. See `tests/benchmark_demo_results.csv`.
 - **HTTP demo timing P-01:** four scan types, two localhost HTTP requests each, reported in the P-01 row. These are measured demo-mode latencies.
 - **Manual execution still pending:** screen layout, reports opened in applications, unplugging network, user-owned live targets, key handling and browser interactions. They must not be marked passed from CI mocks or demo scans alone.
+
+
+## 6. Additional verified API submission checks
+
+On 23 November 2026, GitHub Actions [run 45223141799](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799) executed `python tests/run_submission_checks.py`: **23 of 23 safe application-level API checks passed**. Their observed HTTP statuses, demo scores, and export signatures are captured in `tests/submission_checks_results.csv` and in the corresponding table rows. The run also reported **153 passed in 1.07s** for the pytest suite. These checks are automated and isolated from third-party live services. The remaining entries explicitly marked Pending require real manual verification and cannot be counted in a manual pass-rate calculation.
