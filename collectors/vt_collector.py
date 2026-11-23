@@ -1,42 +1,28 @@
 """
-collectors/vt_collector.py - Domain / IP / URL reputation from VirusTotal API v3.
-
-    GET https://www.virustotal.com/api/v3/domains/{domain}
-    GET https://www.virustotal.com/api/v3/ip_addresses/{ip}
-    GET https://www.virustotal.com/api/v3/urls/{url_id}   (url_id = base64url(url), no padding)
-    header  x-apikey: <key>
-
-Free "Public API": 4 requests/minute, 500/day, non-commercial use only.
-We enforce the per-minute limit locally so the app never exceeds it.
-
-Two deliberate design choices worth explaining in a viva:
-1. We only READ existing VirusTotal reports. We never SUBMIT a URL for
-   scanning, because submissions are shared with the VirusTotal community and
-   could leak a private URL.
-2. Reputation is a signal, not proof. "3 engines flagged this" means three
-   vendors' classifiers think so - it is not confirmed malicious activity.
+Read-only VirusTotal API v3 lookups for domains, IPs, URLs and file hashes.
+No URL or file is submitted for analysis.
 """
 from __future__ import annotations
 
 import base64
+import ipaddress
+import re
 import threading
 import time
 from collections import deque
 from datetime import datetime, timezone
 from urllib.parse import quote
 
-from .base import BaseCollector, CollectorError, Finding
+from .base import BaseCollector, CollectorError
 
 API = "https://www.virustotal.com/api/v3"
 GUI = "https://www.virustotal.com/gui"
 PER_MINUTE = 4
-
 _calls: deque = deque()
 _lock = threading.Lock()
 
 
 def reserve_quota(now: float | None = None) -> float:
-    """Return 0 if a call is allowed now, else seconds to wait."""
     now = now or time.time()
     with _lock:
         while _calls and now - _calls[0] >= 60:
@@ -48,7 +34,8 @@ def reserve_quota(now: float | None = None) -> float:
 
 
 def target_kind(target: str) -> str:
-    import ipaddress
+    if re.fullmatch(r"(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64})", target):
+        return "hash"
     if target.startswith(("http://", "https://")):
         return "url"
     try:
@@ -66,58 +53,68 @@ class VirusTotalCollector(BaseCollector):
     module = "virustotal"
     source = "VirusTotal"
 
-    def collect(self, target: str) -> list[Finding]:
+    def collect(self, target: str):
         key = self.config.get("VIRUSTOTAL_API_KEY")
         if not key:
-            raise CollectorError("VirusTotal API key not configured (VIRUSTOTAL_API_KEY in .env).",
+            raise CollectorError("VirusTotal API key not configured (VIRUSTOTAL_API_KEY).",
                                  skipped=True)
         wait = reserve_quota()
         if wait:
             raise CollectorError(
-                f"Local quota guard: the free VirusTotal API allows {PER_MINUTE} requests per "
-                f"minute. Try again in {int(wait) + 1} s.")
+                f"Local quota guard: VirusTotal allows {PER_MINUTE} public API requests "
+                f"per minute. Try again in {int(wait) + 1} s.")
 
         kind = target_kind(target)
         if kind == "url":
-            endpoint, gui = f"{API}/urls/{url_id(target)}", f"{GUI}/url/{url_id(target)}"
+            encoded = url_id(target)
+            endpoint, gui = f"{API}/urls/{encoded}", f"{GUI}/url/{encoded}"
         elif kind == "ip":
             endpoint, gui = f"{API}/ip_addresses/{target}", f"{GUI}/ip-address/{target}"
+        elif kind == "hash":
+            endpoint, gui = f"{API}/files/{quote(target)}", f"{GUI}/file/{quote(target)}"
         else:
             endpoint, gui = f"{API}/domains/{quote(target)}", f"{GUI}/domain/{target}"
 
-        resp = self.http_get(endpoint, headers={"x-apikey": key, "Accept": "application/json"})
-        if resp.status_code == 404:
+        response = self.http_get(
+            endpoint, headers={"x-apikey": key, "Accept": "application/json"}
+        )
+        if response.status_code == 404:
             return [self.finding(
                 code="VT_NOT_FOUND", title="No VirusTotal report exists",
-                value="VirusTotal has never analysed this target. (We do not submit it, "
-                      "because submissions are shared publicly.)",
-                status="not_found", source_url=gui)]
-        if resp.status_code == 401:
+                value="VirusTotal has no existing report for this target. We do not submit "
+                      "targets for analysis.", status="not_found", source_url=gui)]
+        if response.status_code == 401:
             raise CollectorError("VirusTotal rejected the API key (HTTP 401).")
-        if resp.status_code == 429:
-            raise CollectorError("VirusTotal quota exceeded (HTTP 429). Free tier: 4/min, 500/day.")
-        resp.raise_for_status()
-        return self.build_findings(resp.json().get("data", {}).get("attributes", {}), gui, kind)
+        if response.status_code == 429:
+            raise CollectorError("VirusTotal quota exceeded (HTTP 429).")
+        response.raise_for_status()
+        return self.build_findings(
+            response.json().get("data", {}).get("attributes", {}), gui, kind
+        )
 
-    def build_findings(self, attrs: dict, gui: str, kind: str) -> list[Finding]:
+    def build_findings(self, attrs: dict, gui: str, kind: str):
         stats = attrs.get("last_analysis_stats", {}) or {}
-        malicious, suspicious = stats.get("malicious", 0), stats.get("suspicious", 0)
+        malicious = stats.get("malicious", 0)
+        suspicious = stats.get("suspicious", 0)
         engines = sum(v for v in stats.values() if isinstance(v, int))
         ts = attrs.get("last_analysis_date")
         analysed = (datetime.fromtimestamp(ts, timezone.utc).date().isoformat()
                     if isinstance(ts, (int, float)) else "unknown")
-        note = "Reputation data from security vendors - a signal, not confirmed malicious activity."
-        out: list[Finding] = []
+        note = "Vendor reputation is a signal, not proof of malicious activity."
+        out = []
 
         if malicious:
             out.append(self.finding(
-                code="VT_MALICIOUS", title=f"Flagged as malicious by {malicious} of {engines} engines",
-                value=f"Last analysed {analysed}. {note}", severity="high", source_url=gui))
+                code="VT_MALICIOUS",
+                title=f"Flagged as malicious by {malicious} of {engines} engines",
+                value=f"Last analysed {analysed}. {note}",
+                severity="high", source_url=gui))
         if suspicious:
             out.append(self.finding(
                 code="VT_SUSPICIOUS",
                 title=f"Flagged as suspicious by {suspicious} of {engines} engines",
-                value=f"Last analysed {analysed}. {note}", severity="medium", source_url=gui))
+                value=f"Last analysed {analysed}. {note}",
+                severity="medium", source_url=gui))
         if not malicious and not suspicious:
             out.append(self.finding(
                 code="VT_CLEAN", title="No engine flagged this target",
@@ -126,7 +123,8 @@ class VirusTotalCollector(BaseCollector):
 
         out.append(self.finding(
             code="VT_STATS", title="Engine verdict breakdown",
-            value=", ".join(f"{k}: {v}" for k, v in stats.items()), source_url=gui,
+            value=", ".join(f"{k}: {v}" for k, v in stats.items()),
+            source_url=gui,
             details={"chart": {k: v for k, v in stats.items() if isinstance(v, int)},
                      "table": {"columns": ["Verdict", "Engines"],
                                "rows": [[k, v] for k, v in stats.items()]}}))
@@ -136,7 +134,8 @@ class VirusTotalCollector(BaseCollector):
             out.append(self.finding(
                 code="VT_COMMUNITY_SCORE", title="Community reputation score",
                 value=f"{rep} (negative values mean the community voted it harmful)",
-                severity="low" if isinstance(rep, int) and rep < 0 else "info", source_url=gui))
+                severity="low" if isinstance(rep, int) and rep < 0 else "info",
+                source_url=gui))
 
         cats = attrs.get("categories") or {}
         if cats:
@@ -148,4 +147,8 @@ class VirusTotalCollector(BaseCollector):
                 code="VT_NETWORK", title="Network owner",
                 value=f"{attrs.get('as_owner', 'unknown')} ({attrs.get('country', '??')})",
                 source_url=gui))
+        if kind == "hash" and attrs.get("meaningful_name"):
+            out.append(self.finding(
+                code="VT_FILE_NAME", title="Known file name",
+                value=str(attrs["meaningful_name"]), source_url=gui))
         return out
