@@ -183,7 +183,7 @@ right. Results appear in the black band underneath ("Results appear here" until 
      intelligence → Correlating entities → Scoring exposure*
 5. The page sends `POST /api/scan/<type>` with `{target, mode, authorized}`.
 6. When the answer arrives, `render.js` draws the result and a pop-up says
-   *"Scan #5 saved - exposure score 56."*
+   *"Scan #5 saved - exposure score 10."*
 7. If the server refuses (bad input, not a demo target…), its message appears in red under
    the input box.
 
@@ -192,13 +192,13 @@ right. Results appear in the black band underneath ("Results appear here" until 
 ```
  ┌─────────────────────────────────────────────────────────────────────────────┐
  │   ╭──────╮    demo-corp.test                                                │
- │  ╱   56   ╲   [Demo data] Domain intelligence · Scan #1 · completed · <1 ms │
- │  High exposure                                                              │
+ │  ╱   10   ╲   [Demo data] Domain intelligence · Scan #1 · completed · <1 ms │
+ │  Low exposure                                                              │
  │               How certain are these results?                                │
- │               ████████████████████████████████  Confirmed 21 · Inconcl. 0 … │
+ │               ████████████████████████████████  Confirmed / Not found / Inconclusive / Error … │
  │               [Download PDF] [Download CSV] [Add to graph] [Open as page]   │
  ├─────────────────────────────────────────────────────────────────────────────┤
- │  Overview | Relationship graph (33) | Findings (21) | What to do next (13) | Limitations │
+ │  Overview | Relationship graph | Findings | What to do next | Limitations │
  └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -214,7 +214,7 @@ right. Results appear in the black band underneath ("Results appear here" until 
 
 | Tab | What it shows |
 |---|---|
-| **Overview** | Top 6 risk indicators (sorted by severity); mini graph statistics; the status and time of every source; **"How the score of 56 was calculated"** table (finding, severity, +points) |
+| **Overview** | Top 6 risk indicators (sorted by severity); mini graph statistics; the status and time of every source; **"How the score of 10 was calculated"** table (finding, severity, +points) |
 | **Relationship graph** | The interactive map (next section) |
 | **Findings** | Grouped by source (Registration data, DNS, Certificate transparency, TLS…). Each finding shows title, value, severity badge, certainty pill, source name, time and a **"view source"** link to check it yourself. Tables (DNS records, subdomains) are expandable. Username results are shown in three columns: **Profile found / Inconclusive / Not found**. Reputation results include a doughnut chart of vendor verdicts. |
 | **What to do next** | Recommendations ordered by priority (High → Medium → Low → Baseline), each with a **"Because: …"** line naming the finding that caused it |
@@ -289,12 +289,12 @@ What happens when you click the sample card **`demo-corp.test`** on the Overview
  7. ─── POST /api/scan/domain {"target":"demo-corp.test","mode":"demo"} ──►
                                                       8. rate limit → validate → demo check
                                                       9. collectors (demo data) → findings
-                                                     10. score 56 → 13 recommendations
+                                                     10. score 10 → recommendations
                                                      11. save to SQLite → build graph
  12. ◄──── 201 {"ok":true,"scan":{… score, findings, graph …}} ────
  13. render.js draws gauge, certainty bar, tabs
  14. graph.js draws the 33-node map when the Graph tab is opened
- 15. Pop-up: "Scan #1 saved - exposure score 56."
+ 15. Pop-up: "Scan #1 saved - exposure score 10."
 ```
 
 **🗣 Say it like this:** *"The browser never does the analysis itself. It only sends one
@@ -330,7 +330,7 @@ server."*
 
 ## 9. Class demo script (about 7 minutes)
 
-**Before class:** run `run_tests.bat` (expect `153 passed (GitHub Actions run #45222088362)`), delete `database/osint.db` for an
+**Before class:** run `run_tests.bat` (153 tests passed in GitHub Actions on 23 Nov 2026; recheck locally), delete `database/osint.db` for an
 empty history, start `run.bat`, keep the switch on **Demo**, keep one PDF downloaded as backup.
 
 | Time | Do this | Say this |
@@ -338,8 +338,8 @@ empty history, start `run.bat`, keep the switch on **Demo**, keep one PDF downlo
 | 0:00 | Show the Overview page | "ReconLens shows what the internet already knows about an organisation - safely, with public data only." |
 | 0:30 | Type `alice@demo-corp.test` in the big box, point at the **Email** pill | "Smart search detects the type automatically." |
 | 0:45 | Click the sample card **`demo-corp.test`** | "This is a fictional, weakly configured company." |
-| 1:00 | Point at the **gauge (56, High)** and the **certainty bar** | "56 out of 100. The bar shows all 21 results are confirmed - nothing guessed." |
-| 1:30 | **Overview tab** → scroll to "How the score was calculated" | "Every point comes from one confirmed finding: 4 medium problems × 10, 4 low × 4." |
+| 1:00 | Point at the **gauge (10, Low)** and the **certainty bar** | "10 out of 100. The bar shows all 21 results are confirmed - nothing guessed." |
+| 1:30 | **Overview tab** → scroll to "How the score was calculated" | "Confirmed findings contribute to category-weighted scores with severity multipliers and diminishing returns." |
 | 2:15 | **Relationship graph tab** → click the `vpn` subdomain | "The target is in the middle. Red outlines are risks - a VPN host visible in public certificate logs." |
 | 3:00 | **Findings tab** → open the DNS records table, click "view source" | "Every finding has its source and time, so anyone can verify it." |
 | 3:30 | **What to do next** tab | "Each problem becomes a concrete fix, ordered by priority, with the reason." |
@@ -392,4 +392,4 @@ the system theme.
 
 ### Current verification note (23 November 2026)
 
-The legacy fixed claim of `132 passed` was incorrect. GitHub Actions run #45222088362 verified **153 passed in 1.36s** with Python 3.12 on 23 November 2026. Run `python -m pytest -q` again when making further code changes. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
+The previous fixed test-count claim was incorrect. GitHub Actions run #45222088362 verified **153 passed in 1.36s** with Python 3.12 on 23 November 2026. Run `python -m pytest -q` again when making further code changes. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
