@@ -6,7 +6,7 @@ certainty, **maps how the collected intelligence connects in an interactive rela
 graph**, correlates separate scans through shared entities, computes a transparent weighted
 exposure score with evidence attribution, and produces security recommendations and PDF/CSV reports.
 
-Team: Aryan Sharma (2024A1R101), Varun Sharma (2024A1R107)
+Team (confirm against your official submission cover page): Aryan Sharma (2024A1R101), Varun Sharma (2024A1R107)
 
 ### What's new in version 2
 
@@ -77,13 +77,14 @@ The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with 
 
 Option A - double-click **`setup.bat`**, then **`run.bat`**.
 
-Option B - manually in Command Prompt, inside the `osint-dashboard` folder:
+Option B - manually in Command Prompt, inside the `ReconLens-OSINT` folder:
 
 ```bat
 py -3 -m venv venv
 venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 copy .env.example .env
 python app.py
 ```
@@ -144,6 +145,7 @@ After editing `.env`, stop the server (CTRL+C) and start it again.
 
 ```bat
 venv\Scripts\activate
+pip install -r requirements-dev.txt
 python -m pytest -v
 ```
 
@@ -154,12 +156,13 @@ the number changes as tests are added. **Verified result:** `153 passed in 1.36s
 ## 5. Project structure
 
 ```
-osint-dashboard/
+ReconLens-OSINT/
 ├── app.py                    Flask application factory, security headers, error handlers
 ├── config.py                 Settings loaded from .env (keys, timeouts, rate limit, retention)
 ├── extensions.py             Rate limiter (Flask-Limiter) shared by the routes
 ├── .env.example              Template for .env (copy it; never commit .env)
-├── requirements.txt          Pinned Python dependencies
+├── requirements.txt          Pinned runtime Python dependencies (Render)
+├── requirements-dev.txt      Test dependencies (pytest)
 ├── setup.bat / run.bat / run_tests.bat   Windows helpers
 ├── database/
 │   ├── schema.sql            Tables: scans, findings
