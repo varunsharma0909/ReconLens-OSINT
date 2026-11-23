@@ -26,6 +26,8 @@ jobs:
         run: |
           python tests/build_demo_benchmark.py | tee benchmark-summary.txt
           python tests/evaluate_osint.py tests/benchmark_demo_results.csv
+      - name: Execute safe application-level submission checks
+        run: python tests/run_submission_checks.py | tee submission-checks-summary.txt
       - name: Print measured demo benchmark rows
         run: cat tests/benchmark_demo_results.csv
       - name: Measure local HTTP demo response times
@@ -46,4 +48,6 @@ jobs:
             benchmark-summary.txt
             tests/benchmark_demo_results.csv
             http-demo-performance.txt
+            submission-checks-summary.txt
+            tests/submission_checks_results.csv
           if-no-files-found: warn
