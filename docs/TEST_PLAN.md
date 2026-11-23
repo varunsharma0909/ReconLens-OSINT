@@ -21,8 +21,8 @@ authorised to assess.
 | Python version (`python --version`) | Render deployment log: 3.14.10; local test runtime not recorded |
 | Browser | Not recorded |
 | Network (home Wi-Fi / college / mobile hotspot) | Not recorded |
-| Date of testing | Pending (no verified manual execution) |
-| Automated test result (`pytest` summary line) | User reported tests passing; exact count and output not supplied for independent verification |
+| Date of testing | 23 Nov 2026 (automated only; manual session pending) |
+| Automated test result (`pytest` summary line) | 153 passed in 1.36s, Python 3.12 on GitHub Actions (23 Nov 2026), [run evidence](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362); manual tests remain pending |
 
 ## 2. Manual test cases
 
