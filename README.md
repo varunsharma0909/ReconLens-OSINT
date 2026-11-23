@@ -8,6 +8,16 @@ exposure score with evidence attribution, and produces security recommendations 
 
 Team (confirm against your official submission cover page): Aryan Sharma (2024A1R101), Varun Sharma (2024A1R107)
 
+## Screenshots
+
+The dashboard, relationship graph and PDF report should be captured from
+the **running application** with fictional demo targets before final
+submission. Do not substitute generated mockups for actual screenshots or
+expose real email addresses/API keys. Screenshots have not yet been
+committed; add verified images to `docs/screenshots/` as
+`dashboard.png`, `graph.png` and `pdf-report.png`, then embed them
+here. The repository's demo mode can produce all three without live queries.
+
 ### What's new in version 2
 
 - **Relationship graph** (Cytoscape.js) for every scan: domains, IPs, nameservers, mail
@@ -57,6 +67,21 @@ python tests/evaluate_osint.py tests/my_results.csv
 
 The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with accuracy/precision/recall **1.000** and local Flask test-client median/max **5.0/7.8 ms** in [GitHub Actions run #45222088362](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362). **These are demo fixture consistency results, not real-world predictive accuracy.** A second [verification run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273) captured all eight measured rows in `tests/benchmark_demo_results.csv` and two local HTTP demo timings per scan type (domain median 15 ms; username/email/reputation 5 ms). For real benchmarks, record accuracy, precision, recall, false-positive rate, median and maximum response time. Compare tools only on overlapping supported target types and the same ground-truth set. Do not invent benchmark results; document API coverage, quotas, timestamps and unavailable responses. See `docs/OSINT_EVALUATION.md`.
 
+### Score sensitivity
+
+The weighting heuristic has an offline reproducible sensitivity check:
+
+```bash
+python tests/score_sensitivity.py
+```
+
+Seven category-weight schedules were evaluated on eight fictional demo
+fixtures: **56 computed scores**. The largest absolute change was **5
+points**, with one fixture crossing a risk-level threshold in the
+malware/URL −20% scenario. This tests **stability under design choices**,
+not predictive accuracy or statistical calibration. See
+[the sensitivity results and limitations](docs/OSINT_EVALUATION.md#7-category-weight-sensitivity-analysis-fictional-fixtures).
+
 ### Privacy safeguards
 
 - Keep API keys only in server environment variables; never place them in browser JavaScript or reports.
@@ -72,6 +97,43 @@ The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with 
   "Add python.exe to PATH".
 - ~100 MB disk space, any laptop with 4 GB RAM.
 - Internet only for installation and for live lookups.
+
+## Production / container run
+
+On Linux or macOS with dependencies installed, launch the production WSGI
+server (the Flask app uses an application factory):
+
+```bash
+gunicorn 'app:create_app()' --bind 0.0.0.0:10000 --workers 2 --timeout 120
+```
+
+Or run the provided Dockerfile:
+
+```bash
+docker build -t reconlens-osint .
+docker run --rm -p 10000:10000 --env-file .env reconlens-osint
+```
+
+Use `http://localhost:10000` locally. The `.env` file is not copied
+into the image; passing it at runtime keeps secrets out of the Docker build.
+If no local `.env` exists, create one from `.env.example`, set a proper
+secret and leave provider keys blank for demo mode.
+
+Docker's default SQLite database is inside the container and **not
+persistent** unless a writable volume is mounted, for example
+`-v reconlens-data:/app/database`. On Render, set `DATABASE_PATH` to
+a writable location; an ephemeral instance will lose SQLite history on
+restart or redeploy. Render's start command can also use the same Gunicorn
+entry point.
+
+## CI and licence
+
+GitHub Actions runs the offline pytest suite, simulated benchmark,
+sensitivity experiment, API checks and demo timing on every push to
+`main`, on pull requests and by manual dispatch.
+[View verification runs](https://github.com/varunsharma0909/ReconLens-OSINT/actions/workflows/verification.yml).
+The project is distributed under the [MIT License](LICENSE). Existing
+third-party packages and bundled fonts have their own licences.
 
 ## 2. Setup on Windows
 
@@ -163,6 +225,8 @@ ReconLens-OSINT/
 ├── .env.example              Template for .env (copy it; never commit .env)
 ├── requirements.txt          Pinned runtime Python dependencies (Render)
 ├── requirements-dev.txt      Test dependencies (pytest)
+├── Dockerfile / .dockerignore Container deployment with non-root process
+├── LICENSE                   MIT licence
 ├── setup.bat / run.bat / run_tests.bat   Windows helpers
 ├── database/
 │   ├── schema.sql            Tables: scans, findings
@@ -208,7 +272,7 @@ ReconLens-OSINT/
 │   │                         vendor/cytoscape.min.js (Cytoscape.js, MIT)
 │   └── fonts/                Red Hat Display, Public Sans, IBM Plex Mono (SIL OFL) - served locally
 ├── logs/                     app.log (rotating)
-├── tests/                    pytest suite, mocked threat-source tests, benchmark tools
+├── tests/                    pytest suite, mocked threat-source tests, benchmark/sensitivity tools
 └── docs/                     Architecture diagrams, API reference, test plan
 ```
 
