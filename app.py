@@ -80,6 +80,10 @@ def create_app(test_config: dict | None = None) -> Flask:
         raise RuntimeError('Set a stable, non-default SECRET_KEY before running the team branch.')
     app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax')
     app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', not app.config.get('TESTING', False))
+    if app.config.get("TRUST_PROXY_HEADERS"):
+        # Enable only behind a trusted single-hop proxy, such as Render.
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
     configure_logging(app)
     limiter.init_app(app)
     init_db(app)
@@ -100,6 +104,8 @@ def create_app(test_config: dict | None = None) -> Flask:
     @app.after_request
     def security_headers(resp):
         resp.headers["Content-Security-Policy"] = CSP
+        if request.is_secure:
+            resp.headers["Strict-Transport-Security"] = "max-age=31536000"
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["X-Frame-Options"] = "DENY"
         resp.headers["Referrer-Policy"] = "no-referrer"
