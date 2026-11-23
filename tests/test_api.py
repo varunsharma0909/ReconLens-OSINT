@@ -199,7 +199,7 @@ def test_live_reputation_needs_key(client):
         authorized=True
     )
 
-    assert r.get_json()["error"]["code"] == "virustotal_key_missing"
+    assert r.get_json()["error"]["code"] == "reputation_keys_missing"
 
 
 @pytest.mark.parametrize(
@@ -395,7 +395,7 @@ def test_auto_scan_keeps_every_safeguard(client):
         }
     )
 
-    assert r.get_json()["error"]["code"] == "virustotal_key_missing"
+    assert r.get_json()["error"]["code"] == "reputation_keys_missing"
 
     r = client.post(
         "/api/scan/auto",
