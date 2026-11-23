@@ -113,7 +113,7 @@ Open **http://127.0.0.1:5000** in your browser.
 4. Run the samples `alice@demo-corp.test` and `phish-login.demo-corp.test`, then open
    **Investigation graph**: all three scans meet at the shared node `demo-corp.test`.
 5. Compare with `secure-shop.test` (well configured, score 0).
-6. **Scan history** lists stored scans; filter, open or delete any of them.
+6. **Scan history** lists stored scans; filter, open or delete any of them, or export up to 200 newest scan summaries as a formula-safe CSV.
 
 ### Live lookups
 
