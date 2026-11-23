@@ -29,7 +29,7 @@ def _list(name: str) -> list[str]:
 
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY") or os.urandom(32).hex()
+    SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
     ALLOW_LIVE_MODE = _bool("ALLOW_LIVE_MODE", True)
 
     VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "").strip()
