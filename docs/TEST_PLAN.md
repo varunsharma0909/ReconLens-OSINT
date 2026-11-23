@@ -22,7 +22,7 @@ authorised to assess.
 | Browser | Not recorded |
 | Network (home Wi-Fi / college / mobile hotspot) | Not recorded |
 | Date of testing | 23 Nov 2026 (automated only; manual session pending) |
-| Automated test result (`pytest` summary line) | 153 passed in 1.36s, Python 3.12 on GitHub Actions (23 Nov 2026), [run evidence](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362); manual tests remain pending |
+| Automated test result (`pytest` summary line) | 156 passed in 1.10s, Python 3.12 on GitHub Actions (23 Nov 2026), [run evidence](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45226376678); manual tests remain pending |
 
 ## 2. Manual test cases
 
@@ -129,7 +129,7 @@ Compute these from **your own** test results. Do not estimate.
 
 ## 5. Verified CI evidence (not manual browser execution)
 
-- **Automated tests:** `153 passed in 1.20s` in [run 45222389273](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273), Python 3.12 on GitHub-hosted Ubuntu.
+- **Automated tests:** `156 passed in 1.10s` in [run 45226376678](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273), Python 3.12 on GitHub-hosted Ubuntu.
 - **Eight demo-case fixture benchmark:** 4 TP, 0 FP, 4 TN, 0 FN. Measured Flask test-client response times median **3.9 ms**, maximum **20.8 ms** in the same run. See `tests/benchmark_demo_results.csv`.
 - **HTTP demo timing P-01:** four scan types, two localhost HTTP requests each, reported in the P-01 row. These are measured demo-mode latencies.
 - **Manual execution still pending:** screen layout, reports opened in applications, unplugging network, user-owned live targets, key handling and browser interactions. They must not be marked passed from CI mocks or demo scans alone.
@@ -137,4 +137,4 @@ Compute these from **your own** test results. Do not estimate.
 
 ## 6. Additional verified API submission checks
 
-On 23 November 2026, GitHub Actions [run 45223141799](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799) executed `python tests/run_submission_checks.py`: **23 of 23 safe application-level API checks passed**. Their observed HTTP statuses, demo scores, and export signatures are captured in `tests/submission_checks_results.csv` and in the corresponding table rows. The run also reported **153 passed in 1.07s** for the pytest suite. These checks are automated and isolated from third-party live services. The remaining entries explicitly marked Pending require real manual verification and cannot be counted in a manual pass-rate calculation.
+On 23 November 2026, GitHub Actions [run 45223141799](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45223141799) executed `python tests/run_submission_checks.py`: **23 of 23 safe application-level API checks passed**. Their observed HTTP statuses, demo scores, and export signatures are captured in `tests/submission_checks_results.csv` and in the corresponding table rows. The run also reported **156 passed in 1.07s** for the pytest suite. These checks are automated and isolated from third-party live services. The remaining entries explicitly marked Pending require real manual verification and cannot be counted in a manual pass-rate calculation.
