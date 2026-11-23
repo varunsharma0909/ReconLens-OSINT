@@ -8,6 +8,7 @@
   const box = document.getElementById("history-table");
   const seg = document.getElementById("filter-type");
   const text = document.getElementById("filter-text");
+  const exportLink = document.getElementById("history-export");
   let type = "";
   let all = [];
 
@@ -18,6 +19,8 @@
   }
 
   async function load() {
+    if (exportLink) exportLink.href = "/api/scans.csv?limit=200" +
+      (type ? `&type=${encodeURIComponent(type)}` : "");
     try {
       const data = await api("/api/scans?limit=200" + (type ? `&type=${encodeURIComponent(type)}` : ""));
       all = data.scans;
