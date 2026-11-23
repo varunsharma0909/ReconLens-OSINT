@@ -30,6 +30,13 @@
     <a href="{{ url_for('pages.history') }}">Scan history</a>
     <span aria-hidden="true">|</span>
     <a href="{{ url_for('pages.about') }}">Method &amp; ethics</a>
+    {% if security_user %}
+    <span aria-label="Signed in as {{ security_user.username }}">{{ security_user.username }} ({{ security_user.role }})</span>
+    <form method="post" action="{{ url_for('security.logout') }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-small" type="submit">Sign out</button>
+    </form>
+    {% endif %}
     <span aria-hidden="true">|</span>
     <a href="{{ url_for('pages.graph') }}">Investigation graph</a>
   </div>
