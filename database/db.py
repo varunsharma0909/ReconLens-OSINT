@@ -40,6 +40,10 @@ def init_db(app):
     """Create tables (if missing) and apply the data-retention policy."""
     with _connect(app.config["DATABASE_PATH"]) as conn:
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(scans)")}
+        if "owner_id" not in columns:
+            conn.execute("ALTER TABLE scans ADD COLUMN owner_id INTEGER REFERENCES users(id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_scans_owner ON scans(owner_id, id)")
         removed = purge_old_scans(conn, app.config["RETENTION_DAYS"])
         if removed:
             app.logger.info("Retention policy removed %d old scan(s)", removed)
@@ -53,19 +57,19 @@ def purge_old_scans(conn: sqlite3.Connection, days: int) -> int:
 
 
 # ------------------------------------------------------------------ writes
-def save_scan(scan: dict) -> int:
+def save_scan(scan: dict, owner_id: int | None = None) -> int:
     db = get_db()
     cur = db.execute(
         """INSERT INTO scans (scan_type, target, mode, status, exposure_score,
                exposure_level, authorization, started_at, completed_at, duration_ms,
-               modules_json, recommendations_json, limitations_json, scoring_json)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               modules_json, recommendations_json, limitations_json, scoring_json, owner_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             scan["scan_type"], scan["target"], scan["mode"], scan["status"],
             scan["exposure_score"], scan["exposure_level"], scan.get("authorization"),
             scan["started_at"], scan["completed_at"], scan["duration_ms"],
             json.dumps(scan["modules"]), json.dumps(scan["recommendations"]),
-            json.dumps(scan["limitations"]), json.dumps(scan["scoring"]),
+            json.dumps(scan["limitations"]), json.dumps(scan["scoring"]), owner_id,
         ),
     )
     scan_id = cur.lastrowid
@@ -100,6 +104,7 @@ def delete_scan(scan_id: int) -> bool:
 def _scan_row_to_dict(row: sqlite3.Row) -> dict:
     return {
         "id": row["id"],
+        "owner_id": row["owner_id"],
         "scan_type": row["scan_type"],
         "target": row["target"],
         "mode": row["mode"],
@@ -139,14 +144,20 @@ def get_scan(scan_id: int) -> dict | None:
     return scan
 
 
-def list_scans(limit: int = 50, scan_type: str | None = None) -> list[dict]:
+def list_scans(limit: int = 50, scan_type: str | None = None,\n               owner_id: int | None = None) -> list[dict]:
     db = get_db()
     sql = """SELECT s.*, (SELECT COUNT(*) FROM findings f WHERE f.scan_id = s.id) AS finding_count
              FROM scans s"""
     params: list = []
+    filters = []
     if scan_type:
-        sql += " WHERE s.scan_type = ?"
+        filters.append("s.scan_type = ?")
         params.append(scan_type)
+    if owner_id is not None:
+        filters.append("s.owner_id = ?")
+        params.append(owner_id)
+    if filters:
+        sql += " WHERE " + " AND ".join(filters)
     sql += " ORDER BY s.id DESC LIMIT ?"
     params.append(limit)
     rows = db.execute(sql, params).fetchall()
@@ -158,18 +169,20 @@ def list_scans(limit: int = 50, scan_type: str | None = None) -> list[dict]:
     return result
 
 
-def get_stats() -> dict:
+def get_stats(owner_id: int | None = None) -> dict:
     db = get_db()
-    total = db.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
-    avg = db.execute("SELECT AVG(exposure_score) FROM scans").fetchone()[0]
+    predicate = " WHERE owner_id = ?" if owner_id is not None else ""
+    params = (owner_id,) if owner_id is not None else ()
+    total = db.execute("SELECT COUNT(*) FROM scans" + predicate, params).fetchone()[0]
+    avg = db.execute("SELECT AVG(exposure_score) FROM scans" + predicate, params).fetchone()[0]
     by_type = {
         r["scan_type"]: r["n"]
-        for r in db.execute("SELECT scan_type, COUNT(*) AS n FROM scans GROUP BY scan_type")
+        for r in db.execute("SELECT scan_type, COUNT(*) AS n FROM scans" + predicate + " GROUP BY scan_type", params)
     }
     by_level = {
         r["exposure_level"]: r["n"]
         for r in db.execute(
-            "SELECT exposure_level, COUNT(*) AS n FROM scans GROUP BY exposure_level"
+            "SELECT exposure_level, COUNT(*) AS n FROM scans" + predicate + " GROUP BY exposure_level", params
         )
     }
     by_status = {
