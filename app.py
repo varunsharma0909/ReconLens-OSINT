@@ -21,6 +21,7 @@ from extensions import limiter
 from routes import (auto_routes, domain_routes, email_routes, page_routes, report_routes,
                     reputation_routes, scan_routes, username_routes)
 from routes.common import ApiError
+from security import init_security
 
 # Content-Security-Policy: only our own scripts/styles may run. There are no
 # inline scripts, so injected HTML from third-party data cannot execute.
@@ -75,9 +76,14 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
+    if not app.config.get('TESTING') and (not app.config.get('SECRET_KEY') or app.config['SECRET_KEY'] == 'change-me-to-a-long-random-string'):
+        raise RuntimeError('Set a stable, non-default SECRET_KEY before running the team branch.')
+    app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax')
+    app.config['SESSION_COOKIE_SECURE'] = not app.config.get('TESTING', False)
     configure_logging(app)
     limiter.init_app(app)
     init_db(app)
+    init_security(app)
 
     for module in (page_routes, scan_routes, domain_routes, username_routes,
                    email_routes, reputation_routes, auto_routes, report_routes):
