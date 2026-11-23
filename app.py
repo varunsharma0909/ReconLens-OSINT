@@ -79,7 +79,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     if not app.config.get('TESTING') and (not app.config.get('SECRET_KEY') or app.config['SECRET_KEY'] == 'change-me-to-a-long-random-string'):
         raise RuntimeError('Set a stable, non-default SECRET_KEY before running the team branch.')
     app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax')
-    app.config['SESSION_COOKIE_SECURE'] = not app.config.get('TESTING', False)
+    app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', not app.config.get('TESTING', False))
     configure_logging(app)
     limiter.init_app(app)
     init_db(app)
