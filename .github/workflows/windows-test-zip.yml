@@ -8,6 +8,11 @@ on:
       - 'START_RECONLENS_WINDOWS.bat'
       - 'prepare_local_env.py'
       - 'security.py'
+      - 'templates/login.html'
+      - 'templates/base.html'
+      - 'static/js/login.js'
+      - 'static/css/style.css'
+      - 'tests/test_team_security.py'
       - '.github/workflows/windows-test-zip.yml'
 
 jobs:
