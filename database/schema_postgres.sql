@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS scans (
   status TEXT NOT NULL,
   exposure_score INTEGER NOT NULL DEFAULT 0,
   exposure_level TEXT NOT NULL DEFAULT 'Low',
-  authorization TEXT,
+  "authorization" TEXT,
   started_at TEXT NOT NULL,
   completed_at TEXT,
   duration_ms INTEGER,
