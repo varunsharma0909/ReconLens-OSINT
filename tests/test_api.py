@@ -550,3 +550,27 @@ def test_default_rate_limit_is_configurable(app, client):
 
     # Static files are exempt from rate limiting.
     assert client.get("/static/css/style.css").status_code == 200
+
+
+def test_history_csv_export_is_bounded_filtered_and_masks_email(client):
+    import csv
+    import io
+
+    assert scan(client, "domain", "demo-corp.test").status_code == 201
+    assert scan(client, "email", "alice@demo-corp.test").status_code == 201
+    response = client.get("/api/scans.csv?limit=200")
+    assert response.status_code == 200
+    assert "attachment" in response.headers["Content-Disposition"]
+    body = response.data.decode("utf-8-sig")
+    assert "alice@demo-corp.test" not in body
+    assert "a***@demo-corp.test" in body
+    rows = list(csv.DictReader(io.StringIO(body)))
+    assert len(rows) == 2
+    assert rows[0]["scan_type"] == "email"
+    assert rows[1]["scan_type"] == "domain"
+
+    email_only = client.get("/api/scans.csv?type=email&limit=1")
+    filtered = list(csv.DictReader(io.StringIO(email_only.data.decode("utf-8-sig"))))
+    assert len(filtered) == 1 and filtered[0]["scan_type"] == "email"
+    assert client.get("/api/scans.csv?type=wrong").status_code == 400
+    assert client.get("/api/scans.csv?limit=nope").status_code == 400
