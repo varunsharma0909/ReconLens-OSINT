@@ -74,7 +74,7 @@ For comparative evaluation, prepare a labelled CSV using `tests/benchmark_templa
 python tests/evaluate_osint.py tests/my_results.csv
 ```
 
-The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with accuracy/precision/recall **1.000** and local Flask test-client median/max **5.0/7.8 ms** in [GitHub Actions run #45222088362](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362). **These are demo fixture consistency results, not real-world predictive accuracy.** A second [verification run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273) captured all eight measured rows in `tests/benchmark_demo_results.csv` and two local HTTP demo timings per scan type (domain median 15 ms; username/email/reputation 5 ms). For real benchmarks, record accuracy, precision, recall, false-positive rate, median and maximum response time. Compare tools only on overlapping supported target types and the same ground-truth set. Do not invent benchmark results; document API coverage, quotas, timestamps and unavailable responses. See `docs/OSINT_EVALUATION.md`.
+The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with accuracy/precision/recall **1.000** and local Flask test-client median/max **5.0/7.8 ms** in [GitHub Actions run #45226376678](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45226376678). **These are demo fixture consistency results, not real-world predictive accuracy.** A second [verification run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273) captured all eight measured rows in `tests/benchmark_demo_results.csv` and two local HTTP demo timings per scan type (domain median 15 ms; username/email/reputation 5 ms). For real benchmarks, record accuracy, precision, recall, false-positive rate, median and maximum response time. Compare tools only on overlapping supported target types and the same ground-truth set. Do not invent benchmark results; document API coverage, quotas, timestamps and unavailable responses. See `docs/OSINT_EVALUATION.md`.
 
 ### Score sensitivity
 
@@ -222,7 +222,7 @@ python -m pytest -v
 
 or double-click `run_tests.bat`. The test suite uses mocked network responses, so it
 needs no internet and never queries real targets. **Record the actual count printed by pytest**;
-the number changes as tests are added. **Verified result:** `153 passed in 1.36s` on Python 3.12 in [GitHub Actions run #45222088362](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362) (23 November 2026). This includes the newly added four-provider mocked tests. The old `132 passed` figure was incorrect.
+the number changes as tests are added. **Verified result:** `156 passed in 1.10s` on Python 3.12 in [GitHub Actions run #45226376678](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45226376678) (23 November 2026). This includes the newly added four-provider mocked tests. The old `132 passed` figure was incorrect.
 
 ## 5. Project structure
 
