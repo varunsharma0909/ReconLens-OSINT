@@ -202,10 +202,10 @@ Example: you scan the demo domain **`demo-corp.test`**.
 | 6 | **Choose collectors** - a domain needs RDAP, DNS, crt.sh and TLS | `services/scan_service.py` |
 | 7 | **Collect in parallel** - all 4 collectors run at the same time, each with its own time limit | `scan_service.py` |
 | 8 | **Standardise** - every answer becomes a *Finding* with a certainty label | `collectors/base.py` |
-| 9 | **Score** - add points for confirmed problems → **56 / 100, High** | `services/scoring.py` |
-| 10 | **Recommend** - each problem maps to a fix → 13 actions | `services/recommendations.py` |
-| 11 | **Save** - one row in `scans`, 21 rows in `findings` | `database/db.py` |
-| 12 | **Build graph** - 33 entities, 33 relationships | `services/graph.py` |
+| 9 | **Score** - add points for confirmed problems → **10 / 100, Low** (verified current scoring) | `services/scoring.py` |
+| 10 | **Recommend** - confirmed findings map to defensive actions | `services/recommendations.py` |
+| 11 | **Save** - one row in `scans` and one row per finding | `database/db.py` |
+| 12 | **Build graph** - entities and evidence relationships | `services/graph.py` |
 | 13 | **Reply** - the whole result goes back to the browser as JSON (HTTP 201) | `routes/common.py` |
 | 14 | The browser draws the gauge, graph, findings and actions | frontend |
 
@@ -335,29 +335,30 @@ works identically.
 A simple formula anyone can check by hand:
 
 ```
-score = sum of points of CONFIRMED findings, capped at 100
+score = round(sum of category contributions), capped at 100
 
-points:   high = 20    medium = 10    low = 4    info = 0
+category maximums: malware/URL 30; IP abuse 25; email exposure 20;
+                   domain security 15; threat intelligence 10
 
-level:    0-19 Low   |   20-49 Moderate   |   50-74 High   |   75-100 Critical
+severity multipliers: high 1.0; medium 0.65; low 0.30; info 0
+distinct codes: diminishing shares 60%, 20%, 10%, then 5%
+
+level: 0–19 Low | 20–49 Moderate | 50–74 High | 75–100 Critical
 ```
 
-Inconclusive, not-found and error results give **0 points**: *we never increase the score
-using data we could not verify.*
+Only **confirmed** findings contribute; not-found, error and inconclusive are zero.
+Weights and diminishing returns explain why the risk score is **not** a simple sum
+of four medium findings and four low findings.
 
-**Worked example - `demo-corp.test`:**
+**Verified demo outputs (23 Nov 2026, GitHub Actions run #45223141799):**
 
-| Confirmed problem | Severity | Points |
-|---|---|---|
-| Registration expires soon | medium | 10 |
-| DMARC missing | medium | 10 |
-| Sensitive-looking subdomains discoverable | medium | 10 |
-| TLS certificate expires soon | medium | 10 |
-| No transfer lock | low | 4 |
-| DNSSEC not enabled | low | 4 |
-| Registrant contact details public | low | 4 |
-| SPF neutral (`?all`) | low | 4 |
-| **Total** | | **56 → High** |
+| Fictional target | Score | Level |
+|---|---:|---|
+| `demo-corp.test` | **10** | Low |
+| `secure-shop.test` | **0** | Low |
+| `demo_analyst` | **7** | Low |
+| `alice@demo-corp.test` | **12** | Low |
+| `phish-login.demo-corp.test` | **23** | Moderate |
 
 The well-configured `secure-shop.test` scores **0 (Low)**.
 
