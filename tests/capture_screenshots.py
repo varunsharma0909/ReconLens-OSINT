@@ -26,7 +26,8 @@ import fitz  # noqa: E402
 
 
 def main():
-    app = create_app({"SCAN_RATE_LIMIT": "1000 per minute",
+    app = create_app({"TESTING": True, "AUTH_TEST_BYPASS": True, "SECRET_KEY": "test-only-screenshot-secret",
+                      "SCAN_RATE_LIMIT": "1000 per minute",
                       "DEFAULT_RATE_LIMIT": "1000 per hour"})
     client = app.test_client()
     selected = None
