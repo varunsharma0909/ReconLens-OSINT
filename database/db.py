@@ -144,7 +144,8 @@ def get_scan(scan_id: int) -> dict | None:
     return scan
 
 
-def list_scans(limit: int = 50, scan_type: str | None = None,\n               owner_id: int | None = None) -> list[dict]:
+def list_scans(limit: int = 50, scan_type: str | None = None,
+               owner_id: int | None = None) -> list[dict]:
     db = get_db()
     sql = """SELECT s.*, (SELECT COUNT(*) FROM findings f WHERE f.scan_id = s.id) AS finding_count
              FROM scans s"""
@@ -187,7 +188,11 @@ def get_stats(owner_id: int | None = None) -> dict:
     }
     by_status = {
         r["status"]: r["n"]
-        for r in db.execute("SELECT status, COUNT(*) AS n FROM findings GROUP BY status")
+        for r in db.execute(
+            "SELECT f.status, COUNT(*) AS n FROM findings f JOIN scans s ON s.id = f.scan_id" +
+            (" WHERE s.owner_id = ?" if owner_id is not None else "") +
+            " GROUP BY f.status", params
+        )
     }
     return {
         "total_scans": total,
