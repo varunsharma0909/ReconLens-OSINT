@@ -29,24 +29,24 @@ authorised to assess.
 | ID | Feature | Input / steps | Expected result | Actual result | Pass/Fail |
 |---|---|---|---|---|---|
 | **Functional - domain** |||||||
-| F-01 | Domain demo | Demo mode, `demo-corp.test` | Score 46 Moderate; RDAP, DNS, CT sections; DMARC missing (medium), sensitive subdomains (medium), expiry soon (medium) | Not executed | Pending |
-| F-02 | Domain demo, strong | Demo mode, `secure-shop.test` | Score 0 Low; SPF/DMARC/CAA OK; DNSSEC on | Not executed | Pending |
+| F-01 | Domain demo | Demo mode, `demo-corp.test` | Score 10 Low (current weighted heuristic); RDAP, DNS, CT sections; verify individual findings | Not executed | Pending |
+| F-02 | Domain demo, strong | Demo mode, `secure-shop.test` | Score 0 Low; inspect SPF/DMARC/CAA and DNSSEC findings | Not executed | Pending |
 | F-03 | Domain live | Live, tick authorisation, `example.com` | Registrar and dates from RDAP; DNS records listed; CT section shows hostnames or a labelled crt.sh error | Not executed | Pending |
 | F-04 | Domain live, own domain | Live, a domain you own | Findings match what you know about the domain's DNS/registration | Not executed | Pending |
 | F-05 | Non-existent domain | Live, `this-domain-should-not-exist-12345.com` | RDAP "not found", DNS NXDOMAIN (not_found), no crash | Not executed | Pending |
 | F-06 | URL input accepted | Live, `https://www.example.com/path?x=1` | Analysed as `www.example.com` | Not executed | Pending |
 | **Functional - username** |||||||
-| F-07 | Username demo | Demo, `demo_analyst` | 8 found, 2 inconclusive, 9 not found; reuse warning (medium) | Not executed | Pending |
+| F-07 | Username demo | Demo, `demo_analyst` | Score 7 Low; inspect profile-status counts and username-reuse warning | Not executed | Pending |
 | F-08 | Username demo, low footprint | Demo, `ghost_user_404` | 0 found, score 0 | Not executed | Pending |
 | F-09 | Username live, own handle | Live, your own username | Known accounts appear under "Profile found"; blocked platforms under "Inconclusive", never "found" | Not executed | Pending |
 | F-10 | Username live, random | Live, a random 20-character handle | Mostly "Not found"; none falsely "found" (record any false positives) | Not executed | Pending |
 | **Functional - email** |||||||
-| F-11 | Email demo | Demo, `alice@demo-corp.test` | 3 breaches (high, medium, low); stored as `a***@demo-corp.test` | Not executed | Pending |
+| F-11 | Email demo | Demo, `alice@demo-corp.test` | Score 12 Low; fictional exposure findings; stored as `a***@demo-corp.test` | Not executed | Pending |
 | F-12 | Email live, XposedOrNot test key | Live, `account-exists@XposedOrNot-integration-tests.com` | Source shows "(official test key)"; at least one breach listed | Not executed | Pending |
 | F-13 | Email live, test "no data" | Live, `opt-out@XposedOrNot-integration-tests.com` (XposedOrNot-defined test account; see the XposedOrNot API docs for the current list) | "Not found in any known breach" (not_found). If XposedOrNot's test data differs, record what it returns | Not executed | Pending |
 | F-14 | Email live, real address without key | Live, your own address | Public XposedOrNot is keyless; observe and record returned status or provider error | Not executed | Pending |
 | **Functional - reputation** |||||||
-| F-15 | Reputation demo | Demo, `phish-login.demo-corp.test` | Malicious 7/92 (high), suspicious (medium), verdict chart | Not executed | Pending |
+| F-15 | Reputation demo | Demo, `phish-login.demo-corp.test` | Score 23 Moderate; malicious engine detections and verdict chart | Not executed | Pending |
 | F-16 | Reputation live without key | Live, `example.com`, remove all applicable reputation keys | HTTP 400 `reputation_keys_missing` | Not executed | Pending |
 | F-17 | Reputation live with key (optional) | Live, `example.com` with a configured compatible reputation key | Provider findings or labelled no-match/error; reputation is not proof of safety | Not executed | Pending |
 | **Summary, recommendations, reports** |||||||
@@ -90,7 +90,7 @@ authorised to assess.
 | D-02 | Cascade delete | Delete a scan, inspect `findings` table (DB Browser for SQLite) | No orphan findings | Not executed | Pending |
 | D-03 | Retention | Set `RETENTION_DAYS=0`, restart | Old scans purged on start-up | Not executed | Pending |
 | **Performance (measured, not estimated)** |||||||
-| P-01 | Demo response time | `python tests/measure_performance.py` | Record min/median/max per module | Not executed | Pending |
+| P-01 | Demo response time | CI ran `python tests/measure_performance.py --runs 2` against local HTTP server | Real measured min / median / max per module | CI: domain 7/15/24 ms; username 5/5/6 ms; email 5/5/5 ms; reputation 4/5/5 ms (2 runs each; [run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273)) | Pass (automated HTTP) |
 | P-02 | Live domain response time | `python tests/measure_performance.py --live example.com --runs 3` | Record total and per-source times | Not executed | Pending |
 | P-03 | Username live response time | Time 3 live checks of your own handle (browser shows duration) | Record | Not executed | Pending |
 | **Responsive UI** |||||||
@@ -125,3 +125,11 @@ Compute these from **your own** test results. Do not estimate.
 - Paste the output of `python -m pytest -v` and `tests/measure_performance.py`.
 - For any failure, note the cause and fix (or why it is a known limitation, e.g. a platform
   blocking automated requests).
+
+
+## 5. Verified CI evidence (not manual browser execution)
+
+- **Automated tests:** `153 passed in 1.20s` in [run 45222389273](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273), Python 3.12 on GitHub-hosted Ubuntu.
+- **Eight demo-case fixture benchmark:** 4 TP, 0 FP, 4 TN, 0 FN. Measured Flask test-client response times median **3.9 ms**, maximum **20.8 ms** in the same run. See `tests/benchmark_demo_results.csv`.
+- **HTTP demo timing P-01:** four scan types, two localhost HTTP requests each, reported in the P-01 row. These are measured demo-mode latencies.
+- **Manual execution still pending:** screen layout, reports opened in applications, unplugging network, user-owned live targets, key handling and browser interactions. They must not be marked passed from CI mocks or demo scans alone.
