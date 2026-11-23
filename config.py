@@ -30,7 +30,7 @@ def _list(name: str) -> list[str]:
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
-    ALLOW_LIVE_MODE = _bool("ALLOW_LIVE_MODE", True)
+    ALLOW_LIVE_MODE = _bool("ALLOW_LIVE_MODE", False)
     SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", True)
 
     VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "").strip()
