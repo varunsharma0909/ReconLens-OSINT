@@ -42,7 +42,7 @@ def main():
     # Run against an isolated SQLite file; do not touch the production database.
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
-        app = create_app({"TESTING": True, "DATABASE_PATH": str(Path(tmp) / "benchmark.db"),
+        app = create_app({"TESTING": True, "AUTH_TEST_BYPASS": True, "SECRET_KEY": "test-only-stable-secret", "DATABASE_PATH": str(Path(tmp) / "benchmark.db"),
                           "SCAN_RATE_LIMIT": "1000 per minute", "ALLOW_LIVE_MODE": True})
         client = app.test_client()
         results = []
