@@ -189,3 +189,32 @@ def init_security(app):
                 raise click.ClickException("Username already exists.") from exc
             raise
         click.echo(f"Created {role} account {username}." )
+
+    @app.cli.command("check-local-admin")
+    def check_local_admin():
+        """Create an admin account on first run, if none exists."""
+        count = get_db().execute(
+            "SELECT COUNT(*) FROM users WHERE role = 'admin' AND active = 1"
+        ).fetchone()[0]
+        if count:
+            click.echo("An active administrator already exists. Use your existing credentials.")
+            return
+        click.echo("First-time setup: create your local administrator.")
+        username = click.prompt("Admin username", default="admin1").strip()
+        if not USERNAME.fullmatch(username):
+            raise click.ClickException("Username must be 3-40 alphanumeric/._- characters.")
+        password = click.prompt("Password (12+ characters)", hide_input=True, confirmation_prompt=True)
+        if len(password) < 12:
+            raise click.ClickException("Password must have at least 12 characters.")
+        try:
+            get_db().execute(
+                "INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)",
+                (username, generate_password_hash(password, method="scrypt"),
+                 "admin", datetime.now(timezone.utc).isoformat())
+            )
+            get_db().commit()
+        except Exception as exc:
+            if "UNIQUE" in str(exc):
+                raise click.ClickException("Username already exists. Choose another username.") from exc
+            raise
+        click.echo("Administrator created. Sign in at http://127.0.0.1:5000/login")
