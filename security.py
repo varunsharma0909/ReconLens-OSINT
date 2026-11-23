@@ -137,8 +137,10 @@ def init_security(app):
                                    error="Invalid credentials."), 401
         session.clear()
         session["user_id"] = user["id"]
+        g.security_user = {"id": user["id"], "username": user["username"],
+                           "role": user["role"], "active": user["active"]}
         csrf_token()
-        audit("login", "session")
+        audit("login", "session", actor_id=user["id"])
         return redirect("/")
 
     @bp.post("/logout")
