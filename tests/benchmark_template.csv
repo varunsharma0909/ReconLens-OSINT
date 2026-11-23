@@ -1,1 +1,9 @@
 scenario_id,expected_threat,predicted_threat,response_ms
+domain_weak,1,,
+domain_strong,0,,
+username_reused,1,,
+username_low,0,,
+email_exposed,1,,
+email_clean,0,,
+reputation_flagged,1,,
+reputation_clean,0,,
