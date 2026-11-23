@@ -330,7 +330,7 @@ server."*
 
 ## 9. Class demo script (about 7 minutes)
 
-**Before class:** run `run_tests.bat` (expect `132 passed`), delete `database/osint.db` for an
+**Before class:** run `run_tests.bat` (expect `the actual pytest pass count (copy from your own run)`), delete `database/osint.db` for an
 empty history, start `run.bat`, keep the switch on **Demo**, keep one PDF downloaded as backup.
 
 | Time | Do this | Say this |
@@ -388,3 +388,8 @@ Yes - the layout is responsive; the navigation becomes a slide-out menu and the 
 **Q: Where are the Demo/Live choice and theme stored?**
 In the browser's local storage. If storage is blocked, the app falls back to Demo mode and
 the system theme.
+
+
+### Current verification note (23 November 2026)
+
+The legacy fixed claim of `132 passed` is unverified and has been removed. Run `python -m pytest -q` and copy the actual summary before submission. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
