@@ -299,4 +299,4 @@ flowchart LR
     G --> H["Unified findings, scoring, provenance and limits"]
 ```
 
-`VIRUSTOTAL_API_KEY` enables VirusTotal; `ABUSE_CH_AUTH_KEY` enables abuse.ch URLhaus, ThreatFox and MalwareBazaar; `ABUSEIPDB_API_KEY` enables AbuseIPDB. Missing keys and unavailable providers do not establish a benign verdict. The PNG diagrams in `docs/diagrams/` were generated for an earlier architecture snapshot; use the updated Mermaid diagrams above as the current source of truth until PNGs are regenerated.
+`VIRUSTOTAL_API_KEY` enables VirusTotal; `ABUSE_CH_AUTH_KEY` enables abuse.ch URLhaus, ThreatFox and MalwareBazaar; `ABUSEIPDB_API_KEY` enables AbuseIPDB. Missing keys and unavailable providers do not establish a benign verdict. The PNG diagrams in `docs/diagrams/` were generated for an earlier architecture snapshot. New current visual diagrams are [system architecture](diagrams/09_current_system_architecture.svg) and [provider routing](diagrams/08_reputation_provider_routing.svg). The Mermaid diagrams in this document remain the current editable source of truth.
