@@ -136,7 +136,7 @@ def create_app(test_config: dict | None = None) -> Flask:
 
 if __name__ == "__main__":
     application = create_app()
-    print("\n  OSINT Footprint Dashboard running at  http://127.0.0.1:5000\n"
+    print("\n  ReconLens-OSINT running at  http://127.0.0.1:5000\n"
           "  Press CTRL+C to stop.\n")
     # host 127.0.0.1 = reachable only from this computer (safer for a demo)
     application.run(host="127.0.0.1", port=5000, debug=False)
