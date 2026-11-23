@@ -83,7 +83,7 @@ def history_csv():
     columns = ("id", "scan_type", "target", "mode", "status", "exposure_score",
                "exposure_level", "started_at", "completed_at", "duration_ms", "finding_count")
     writer.writerow(columns)
-    for scan in list_scans(limit, scan_type):
+    for scan in list_scans(limit, scan_type, owner_id=_visible_owner()):
         writer.writerow([safe_cell(scan.get(key)) for key in columns])
     response = Response("\ufeff" + buf.getvalue(), mimetype="text/csv; charset=utf-8")
     response.headers["Content-Disposition"] = 'attachment; filename="reconlens-scan-history.csv"'
