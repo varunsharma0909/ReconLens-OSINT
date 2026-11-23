@@ -1,9 +1,7 @@
 """
-database/db.py - SQLite helpers.
+database/db.py - SQLite locally, PostgreSQL when DATABASE_URL is set.
 
-Uses Python's built-in sqlite3 module, so no database server is needed.
-Every query uses "?" placeholders (parameterised queries) to prevent SQL
-injection.
+Uses parameterized queries on either database engine.
 """
 import json
 import sqlite3
@@ -82,6 +80,8 @@ def init_db(app):
     if url:
         conn = PgConnection(url)
         try:
+            # Serialize idempotent bootstrap across concurrent Gunicorn workers.
+            conn.execute("SELECT pg_advisory_xact_lock(319478311)")
             for statement in POSTGRES_SCHEMA_PATH.read_text(encoding="utf-8").split(";"):
                 if statement.strip():
                     conn.execute(statement)
