@@ -120,7 +120,10 @@ def init_security(app):
             return redirect("/")
         return render_template("login.html", csrf_token=csrf_token(), error=None)
 
+    from extensions import limiter
+
     @bp.post("/login")
+    @limiter.limit("5 per minute")
     def login_post():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
@@ -160,7 +163,7 @@ def init_security(app):
 
     app.register_blueprint(bp)
     app.before_request(require_authentication_and_csrf)
-    app.context_processor(lambda: {"csrf_token": csrf_token, "security_user": current_user})
+    app.context_processor(lambda: {"csrf_token": csrf_token, "security_user": current_user()})
 
     @app.cli.command("create-user")
     @click.argument("username")
