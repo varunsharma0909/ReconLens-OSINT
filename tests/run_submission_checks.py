@@ -19,7 +19,7 @@ def main():
     observations = []
     with tempfile.TemporaryDirectory() as tempdir:
         app = create_app({
-            "TESTING": True, "DATABASE_PATH": str(Path(tempdir) / "checks.db"),
+            "TESTING": True, "AUTH_TEST_BYPASS": True, "SECRET_KEY": "test-only-stable-secret", "DATABASE_PATH": str(Path(tempdir) / "checks.db"),
             "SCAN_RATE_LIMIT": "1000 per minute", "ALLOW_LIVE_MODE": True,
             "VIRUSTOTAL_API_KEY": "", "ABUSE_CH_AUTH_KEY": "",
             "ABUSEIPDB_API_KEY": "", "AUTHORIZED_EMAIL_DOMAINS": [],
