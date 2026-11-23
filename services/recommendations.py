@@ -102,6 +102,23 @@ RULES = {
     "VT_SUSPICIOUS": ("Treat the target with caution",
                       "Some vendors consider it suspicious. Corroborate with other sources "
                       "before taking action.", "Medium"),
+    "URLHAUS_MALICIOUS_URL": ("Investigate and block the listed malware URL",
+                               "Do not visit the URL. If it belongs to your organisation, "
+                               "remove malicious content, review server logs and request "
+                               "reassessment after remediation.", "High"),
+    "URLHAUS_HOST_MATCH": ("Investigate the host associated with malware URLs",
+                           "Review the host and every associated URL. Remove unauthorised "
+                           "content and check for compromised web applications.", "High"),
+    "THREATFOX_IOC_MATCH": ("Investigate the ThreatFox indicator match",
+                            "Treat the matched IOC as suspicious. Check endpoint, DNS and "
+                            "network telemetry for related activity before blocking it.", "High"),
+    "MALWAREBAZAAR_HASH_MATCH": ("Quarantine the file matching MalwareBazaar",
+                                "Do not execute the file. Quarantine it, scan affected systems "
+                                "and investigate how it entered the environment.", "High"),
+    "ABUSEIPDB_REPORTED": ("Review traffic involving the reported IP address",
+                           "Check firewall and authentication logs for suspicious activity. "
+                           "Do not block solely on reputation; consider context and false positives.",
+                           "Medium"),
 }
 
 BASELINE = {
