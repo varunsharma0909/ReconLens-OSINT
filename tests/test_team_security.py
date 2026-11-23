@@ -101,7 +101,9 @@ def test_users_cannot_read_export_or_delete_others_scans(tmp_path):
     assert alice.get(f"/api/scans/{sid}").status_code == 200
     login(admin, "admin")
     assert admin.get(f"/api/scans/{sid}").status_code == 200
-    assert any(e["action"] == "scan_created" for e in admin.get("/api/admin/audit").get_json()["events"])
+    events = admin.get("/api/admin/audit").get_json()["events"]
+    assert any(e["action"] == "scan_created" and e["actor"] == "alice" for e in events)
+    assert any(e["action"] == "login" and e["actor"] == "alice" for e in events)
 
 
 def test_wrong_password_does_not_create_session(tmp_path):
