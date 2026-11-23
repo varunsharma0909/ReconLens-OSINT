@@ -27,6 +27,8 @@ Header `Content-Type: application/json` is **required** (otherwise HTTP 415).
 
 ### Success response - HTTP 201
 
+The following is an illustrative response excerpt; score values for current fictional demo fixtures were verified in GitHub Actions on 23 November 2026. Findings and collection timestamps in this excerpt are schematic and must not be presented as measured logs.
+
 ```json
 {
   "ok": true,
@@ -36,8 +38,8 @@ Header `Content-Type: application/json` is **required** (otherwise HTTP 415).
     "target": "demo-corp.test",
     "mode": "demo",
     "status": "completed",
-    "exposure_score": 46,
-    "exposure_level": "Moderate",
+    "exposure_score": 10,
+    "exposure_level": "Low",
     "authorization": null,
     "started_at": "2026-10-21T05:31:22+00:00",
     "completed_at": "2026-10-21T05:31:22+00:00",
@@ -53,7 +55,7 @@ Header `Content-Type: application/json` is **required** (otherwise HTTP 415).
        "source_url": "https://dns.google/query?name=demo-corp.test",
        "collected_at": "2026-10-21T05:31:22+00:00", "details": {}}
     ],
-    "scoring": {"score": 46, "level": "Moderate", "method": "...",
+    "scoring": {"score": 10, "level": "Low", "method": "...",
                 "breakdown": [{"code": "DNS_DMARC_MISSING", "points": 10, "...": "..."}],
                 "status_counts": {"confirmed": 19, "not_found": 0, "inconclusive": 0, "error": 0}},
     "recommendations": [{"code": "DNS_DMARC_MISSING", "title": "Publish a DMARC policy",
