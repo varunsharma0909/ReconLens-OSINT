@@ -44,7 +44,7 @@ LIMITATIONS = {
         "DNS answers reflect the resolver used at scan time and may be cached.",
         "The TLS check performs one standard HTTPS handshake on port 443 to read the certificate.",
         "No active scanning (ports, vulnerabilities) is performed - this is passive OSINT only.",
-        "When provider keys are configured, domain scans also query VirusTotal, URLhaus and ThreatFox.",
+        "Configured reputation providers (VirusTotal and abuse.ch sources) are also queried during domain scans.",
     ],
     "username": [
         "Only the platforms listed in collectors/sites.json are checked.",
@@ -65,7 +65,7 @@ LIMITATIONS = {
         "MalwareBazaar is queried only for MD5, SHA1 or SHA256 hashes; no samples are downloaded.",
         "AbuseIPDB is queried only for public IP addresses, using a 90-day report window.",
         "A source returning no match does not prove the target is safe.",
-        "VirusTotal public API quota is limited; its local guard allows at most 4 requests per minute.",
+        "VirusTotal public API quota is limited; its local guard allows at most 4 requests per minute, and the public tier has a daily quota.",
     ],
 }
 
