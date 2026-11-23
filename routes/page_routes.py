@@ -5,6 +5,7 @@ is loaded by the page's JavaScript from the JSON API.
 from flask import Blueprint, abort, render_template
 
 from database.db import get_scan
+from security import can_view_scan
 
 bp = Blueprint("pages", __name__)
 
@@ -48,7 +49,8 @@ def history():
 
 @bp.get("/scan/<int:scan_id>")
 def scan_detail(scan_id: int):
-    if get_scan(scan_id) is None:
+    stored = get_scan(scan_id)
+    if stored is None or not can_view_scan(stored):
         abort(404)
     return render_template("scan_detail.html", page="history",
                            title=f"Scan #{scan_id}", scan_id=scan_id)
