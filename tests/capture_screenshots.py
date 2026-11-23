@@ -6,10 +6,12 @@ Only fictional .test targets are used; no live OSINT providers are queried.
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 OUT = ROOT / "docs" / "screenshots"
 OUT.mkdir(parents=True, exist_ok=True)
 
