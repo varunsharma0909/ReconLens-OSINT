@@ -392,4 +392,4 @@ the system theme.
 
 ### Current verification note (23 November 2026)
 
-The previous fixed test-count claim was incorrect. GitHub Actions run #45222088362 verified **153 passed in 1.36s** with Python 3.12 on 23 November 2026. Run `python -m pytest -q` again when making further code changes. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
+The previous fixed test-count claim was incorrect. GitHub Actions run #45226376678 verified **156 passed in 1.10s** with Python 3.12 on 23 November 2026. Run `python -m pytest -q` again when making further code changes. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
