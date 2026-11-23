@@ -30,6 +30,11 @@ def _list(name: str) -> list[str]:
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
+    DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+    REDIS_URL = os.getenv("REDIS_URL", "").strip()
+    TRUST_PROXY_HEADERS = _bool("TRUST_PROXY_HEADERS", False)
+    RATELIMIT_STORAGE_URI = REDIS_URL or "memory://"
+    RATELIMIT_STORAGE_OPTIONS = {"socket_connect_timeout": 4} if REDIS_URL else {}
     ALLOW_LIVE_MODE = _bool("ALLOW_LIVE_MODE", False)
     SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", True)
 
