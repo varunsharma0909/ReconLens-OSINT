@@ -45,3 +45,28 @@ def test_category_classification():
     assert category_for(f("XON_BREACH", "email")) == "email_exposure"
     assert category_for(f("ABUSEIPDB_HIGH", "reputation")) == "ip_abuse"
     assert category_for(f("VT_MALICIOUS", "reputation")) == "malware_url"
+
+
+def test_weight_override_changes_only_requested_category_budget():
+    findings = [f("VT_MALICIOUS", "reputation", severity="high"),
+                f("DNS_DMARC_MISSING", severity="high")]
+    default = compute_score(findings)
+    alternative = dict(CATEGORY_WEIGHTS, malware_url=36, ip_abuse=23,
+                       email_exposure=18, domain_security=14, threat_intel=9)
+    shifted = compute_score(findings, weights=alternative)
+    assert shifted["weights"] == alternative
+    assert shifted["category_breakdown"]["malware_url"]["points"] > default["category_breakdown"]["malware_url"]["points"]
+    assert compute_score(findings)["score"] == default["score"]
+    assert "malware/URL 36" in shifted["method"]
+
+
+def test_invalid_weight_overrides_are_rejected():
+    import pytest
+    for weights in (
+        {"malware_url": 100},
+        dict(CATEGORY_WEIGHTS, malware_url=-1),
+        dict(CATEGORY_WEIGHTS, malware_url=29),
+        dict(CATEGORY_WEIGHTS, malware_url=True),
+    ):
+        with pytest.raises(ValueError):
+            compute_score([], weights=weights)
