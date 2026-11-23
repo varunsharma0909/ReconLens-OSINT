@@ -119,7 +119,11 @@ def collectors_for(scan_type: str, target: str, config: dict):
         if config.get("VIRUSTOTAL_API_KEY"):
             classes.append(VirusTotalCollector)
         if config.get("ABUSE_CH_AUTH_KEY"):
-            classes.extend([ThreatFoxCollector, MalwareBazaarCollector])
+            # ThreatFox documents MD5 and SHA256 hash searches; MalwareBazaar
+            # accepts MD5, SHA1 and SHA256.
+            if len(target) in (32, 64):
+                classes.append(ThreatFoxCollector)
+            classes.append(MalwareBazaarCollector)
         return classes
     return []
 
