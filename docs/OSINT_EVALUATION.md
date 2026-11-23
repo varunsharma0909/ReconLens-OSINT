@@ -86,11 +86,13 @@ The benchmark runner makes eight actual Flask test-client requests with an isola
 | Fixture count | Defined (fictional) | 8 (4 positive, 4 negative) |
 | Predicted labels | **Measured on GitHub Actions, 23 Nov 2026** | 4 TP, 0 FP, 4 TN, 0 FN |
 | Measured accuracy / precision / recall / FPR | **Measured — fictional fixtures only** | accuracy=1.000; precision=1.000; recall=1.000; FPR=0.000 |
-| Local Flask test-client response times | **Measured on GitHub Actions** | median=5.0 ms; max=7.8 ms; 8 one-off requests (not repeated HTTP trials) |
+| Local Flask test-client response times | **Measured on GitHub Actions** | median=3.9 ms; max=20.8 ms; 8 one-off requests (not repeated HTTP trials); see committed CSV |
 | Live-provider detection performance | **Not measured** | Requires independently labelled, ethically usable real samples and network/API access |
 | Tool-versus-tool comparative results | **Not measured** | Must use the same known ground truth, target type, timing procedure and eligible API access |
 
-Evidence: [GitHub Actions verification run #45222088362](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362) and its downloadable `reconlens-verification` artifact (including the per-case CSV). The run used Ubuntu with Python 3.12. Measurements are environment-specific.
+Evidence: [GitHub Actions verification run #45222389273](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273), committed measured `tests/benchmark_demo_results.csv` and its downloadable `reconlens-verification` artifact. The run used Ubuntu with Python 3.12.
+
+**Measured local HTTP demo performance** (`measure_performance.py --runs 2`, two requests per scan): domain min/median/max **7/15/24 ms**; username **5/5/6 ms**; email **5/5/5 ms**; reputation **4/5/5 ms**. No live API timing was measured; do not use these numbers for source latency claims. Measurements are environment-specific.
 
 **Interpretation:** Even a perfect score on eight fictional fixtures would only show that demo-mode scoring agrees with its own test fixtures. It must never be reported as a real-world threat-detection accuracy or as evidence that ReconLens outperforms VirusTotal, URLhaus, AbuseIPDB or SpiderFoot.
 
