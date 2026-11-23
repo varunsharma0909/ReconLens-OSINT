@@ -31,6 +31,7 @@ def _list(name: str) -> list[str]:
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
     ALLOW_LIVE_MODE = _bool("ALLOW_LIVE_MODE", True)
+    SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", True)
 
     VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "").strip()
     ABUSE_CH_AUTH_KEY = os.getenv("ABUSE_CH_AUTH_KEY", "").strip()
