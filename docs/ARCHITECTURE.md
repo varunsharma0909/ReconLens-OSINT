@@ -17,6 +17,11 @@ flowchart TB
     C4["Username<br/>collector"]
     C5["XposedOrNot<br/>collector"]
     C6["VirusTotal<br/>collector"]
+    C7["URLhaus<br/>collector"]
+    C8["ThreatFox<br/>collector"]
+    C9["MalwareBazaar<br/>collector"]
+    C10["AbuseIPDB<br/>collector"]
+    CTLS["TLS certificate<br/>collector"]
     D["Demo fixtures<br/>(fictional data)"]
     SC["Scoring +<br/>recommendations"]
     REP["Report generator<br/>PDF / CSV"]
@@ -27,10 +32,15 @@ flowchart TB
     E4["Public profile<br/>pages / APIs"]:::ext
     E5["XposedOrNot"]:::ext
     E6["VirusTotal"]:::ext
+    E7["abuse.ch URLhaus"]:::ext
+    E8["abuse.ch ThreatFox"]:::ext
+    E9["abuse.ch MalwareBazaar"]:::ext
+    E10["AbuseIPDB"]:::ext
+    ETLS["Public HTTPS endpoint"]:::ext
 
     UI -- "JSON over HTTP" --> R
     R --> V --> S
-    S --> C1 & C2 & C3 & C4 & C5 & C6
+    S --> C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 & C9 & C10 & CTLS
     S -. "demo mode" .-> D
     C1 --> E1
     C2 --> E2
@@ -38,6 +48,11 @@ flowchart TB
     C4 --> E4
     C5 --> E5
     C6 --> E6
+    C7 --> E7
+    C8 --> E8
+    C9 --> E9
+    C10 --> E10
+    CTLS --> ETLS
     S --> SC --> DB
     R --> REP --> DB
     R --> DB
@@ -140,7 +155,7 @@ flowchart TB
     end
     subgraph Collectors["collectors/"]
         BASE["base.py<br/>Finding · BaseCollector"]
-        COLS["rdap · dns · crtsh ·<br/>username · XposedOrNot · vt"]
+        COLS["rdap · dns · crtsh · tls ·<br/>username · XposedOrNot · vt ·<br/>URLhaus · ThreatFox · MalwareBazaar · AbuseIPDB"]
         DEMO["demo_data.py"]
     end
     subgraph Data["database/"]
@@ -194,7 +209,7 @@ erDiagram
     FINDINGS {
         INTEGER id PK
         INTEGER scan_id FK
-        TEXT module "rdap, dns, crtsh, username, XposedOrNot, virustotal"
+        TEXT module "rdap, dns, crtsh, tls, username, XposedOrNot, virustotal, urlhaus, threatfox, malwarebazaar, abuseipdb"
         TEXT source
         TEXT code "e.g. DNS_DMARC_MISSING"
         TEXT title
@@ -226,6 +241,8 @@ sequenceDiagram
     participant R as RDAP collector
     participant D as DNS collector
     participant C as crt.sh collector
+    participant T as TLS collector
+    participant REP as Reputation collectors (configured)
     participant DB as SQLite
     Op->>B: enter domain, tick authorisation, Run analysis
     B->>F: POST /api/scan/domain {target, mode: live, authorized: true}
@@ -240,6 +257,12 @@ sequenceDiagram
     and
         S->>C: run(target)
         C-->>S: findings (subdomains) or error after timeout
+    and
+        S->>T: run(target)
+        T-->>S: certificate findings or labelled error
+    and
+        S->>REP: URLhaus / ThreatFox / VirusTotal when configured
+        REP-->>S: reputation findings or labelled error
     end
     S->>S: score + recommendations + limitations
     S-->>F: scan dict
@@ -258,7 +281,22 @@ sequenceDiagram
    wrapped by `BaseCollector.run()`, so a timeout or crash in one source becomes an `error`
    finding instead of failing the whole scan.
 3. **Collectors to external APIs:** HTTPS with a descriptive User-Agent, a per-request
-   timeout, API keys read from `.env`, and only GET requests for existing data.
+   timeout, API keys read from `.env`, and only read-only lookups for existing data (HTTP GET or provider-specific POST search requests; no submissions or malware downloads).
 4. **Backend to database:** after the scan, one row goes into `scans` and N rows into
    `findings`, using parameterised queries.
 5. **Modularity:** a new source needs one collector class plus one line in `COLLECTORS`.
+
+## 8. Provider routing and configuration
+
+```mermaid
+flowchart LR
+    A["Validated live reputation target"] --> B{"Target class?"}
+    B -->|domain / URL| C["VirusTotal + URLhaus + ThreatFox"]
+    B -->|public IP| D["VirusTotal + ThreatFox + AbuseIPDB"]
+    B -->|MD5 / SHA-256| E["VirusTotal + ThreatFox + MalwareBazaar"]
+    B -->|SHA-1| F["VirusTotal + MalwareBazaar"]
+    C & D & E & F --> G["Run only providers with configured keys"]
+    G --> H["Unified findings, scoring, provenance and limits"]
+```
+
+`VIRUSTOTAL_API_KEY` enables VirusTotal; `ABUSE_CH_AUTH_KEY` enables abuse.ch URLhaus, ThreatFox and MalwareBazaar; `ABUSEIPDB_API_KEY` enables AbuseIPDB. Missing keys and unavailable providers do not establish a benign verdict. The PNG diagrams in `docs/diagrams/` were generated for an earlier architecture snapshot; use the updated Mermaid diagrams above as the current source of truth until PNGs are regenerated.
