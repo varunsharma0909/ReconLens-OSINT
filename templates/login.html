@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · ReconLens</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <main class="container" style="max-width:520px;margin:6rem auto">
+    <section class="panel" style="padding:2rem">
+      <h1>ReconLens team sign in</h1>
+      <p>Accounts are created by an administrator. Public registration is disabled.</p>
+      {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+      <form action="{{ url_for('security.login_post') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <p><label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required maxlength="40"></p>
+        <p><label for="password">Password</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required></p>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
