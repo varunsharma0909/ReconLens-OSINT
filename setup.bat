@@ -1,7 +1,7 @@
 @echo off
 REM ------------------------------------------------------------
 REM  One-time setup on Windows: virtual environment + packages
-REM  Run from the osint-dashboard folder:   setup.bat
+REM  Run from the ReconLens-OSINT folder:   setup.bat
 REM ------------------------------------------------------------
 cd /d "%~dp0"
 
@@ -23,6 +23,14 @@ pip install -r requirements.txt
 if errorlevel 1 (
   echo.
   echo Package installation failed. Check your internet connection and try again.
+  pause
+  exit /b 1
+)
+
+REM Install development/test dependencies for run_tests.bat.
+pip install -r requirements-dev.txt
+if errorlevel 1 (
+  echo Development dependency installation failed.
   pause
   exit /b 1
 )
