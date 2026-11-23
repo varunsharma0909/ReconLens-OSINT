@@ -40,6 +40,8 @@ class ThreatFoxCollector(BaseCollector):
         response.raise_for_status()
         body = response.json()
         query_status = str(body.get("query_status", "")).lower()
+        if query_status in {"no_api_key", "invalid_auth_key", "auth_key_missing", "user_blacklisted"}:
+            raise CollectorError("ThreatFox authentication failed: check ABUSE_CH_AUTH_KEY.")
 
         if query_status not in ("ok", "success"):
             return [self.finding(
