@@ -1,12 +1,5 @@
 """
-services/validation.py - Strict input validation (allow-lists, not block-lists).
-
-Every user input is normalised and checked BEFORE it reaches a collector.
-This protects against:
-  * injection: usernames/domains are later placed into URLs and DNS queries;
-  * SSRF-style abuse: we refuse private/internal IP addresses and only accept
-    http(s) URLs, which are sent to VirusTotal - never fetched by us;
-  * garbage / oversized input that would waste API quota.
+services/validation.py - Strict input validation for scan targets.
 """
 from __future__ import annotations
 
@@ -25,10 +18,10 @@ LABEL_RE = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$")
 TLD_RE = re.compile(r"^(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$")
 USERNAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{1,38}$")
 EMAIL_LOCAL_RE = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}$")
+HASH_RE = re.compile(r"^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64})$")
 
 
 def _as_ip(value: str):
-    """Return an ip_address object, or None if value is not an IP."""
     try:
         return ipaddress.ip_address(value)
     except ValueError:
@@ -47,7 +40,6 @@ def _require_text(value, field="target", max_len=2048) -> str:
 
 
 def validate_domain(value) -> str:
-    """Accepts 'example.com', 'https://www.example.com/path' or an IDN; returns ASCII form."""
     raw = _require_text(value, max_len=300).lower()
     if "://" in raw:
         raw = urlsplit(raw).hostname or ""
@@ -57,13 +49,13 @@ def validate_domain(value) -> str:
     if _as_ip(raw) is not None:
         raise ValidationError("Please enter a domain name, not an IP address.")
     try:
-        domain = raw.encode("idna").decode("ascii")  # internationalised names -> punycode
+        domain = raw.encode("idna").decode("ascii")
     except UnicodeError:
         raise ValidationError("The domain contains invalid characters.")
     labels = domain.split(".")
     if len(domain) > 253 or len(labels) < 2:
         raise ValidationError("Enter a full domain such as example.com.")
-    if not all(LABEL_RE.match(l) for l in labels) or not TLD_RE.match(labels[-1]):
+    if not all(LABEL_RE.match(label) for label in labels) or not TLD_RE.match(labels[-1]):
         raise ValidationError("That is not a valid domain name.")
     return domain
 
@@ -71,9 +63,7 @@ def validate_domain(value) -> str:
 def validate_username(value) -> str:
     raw = _require_text(value, max_len=40).lstrip("@")
     if not USERNAME_RE.match(raw):
-        raise ValidationError(
-            "Usernames must be 2-39 characters: letters, digits, '.', '_' or '-', "
-            "starting with a letter or digit.")
+        raise ValidationError("Usernames must be 2-39 characters: letters, digits, '.', '_' or '-'.")
     return raw
 
 
@@ -88,8 +78,10 @@ def validate_email(value) -> str:
 
 
 def validate_reputation_target(value) -> str:
-    """Domain, public IP address, or http(s) URL."""
+    """Domain, public IP, http(s) URL, or MD5/SHA1/SHA256 file hash."""
     raw = _require_text(value, max_len=2048)
+    if HASH_RE.fullmatch(raw):
+        return raw.lower()
     if raw.lower().startswith(("http://", "https://")):
         parts = urlsplit(raw)
         if not parts.hostname:
@@ -111,7 +103,6 @@ def validate_reputation_target(value) -> str:
 
 
 def mask_email(email: str) -> str:
-    """alice@example.com -> a***@example.com (used for storage, logs and reports)."""
     if "@" not in email:
         return email
     local, domain = email.split("@", 1)
@@ -125,31 +116,19 @@ VALIDATORS = {
     "reputation": validate_reputation_target,
 }
 
-
-# Smart search: the same shape rules as static/js/search.js, so the browser
-# and the API always agree on which module a typed value belongs to.
 EMAIL_SHAPE_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 DOMAIN_SHAPE_RE = re.compile(r"^[a-z0-9-]+(\.[a-z0-9-]+)+/?$", re.IGNORECASE)
 USERNAME_SHAPE_RE = re.compile(r"^@?[A-Za-z0-9][A-Za-z0-9._-]{1,38}$")
 
 
 def detect_scan_type(value) -> str | None:
-    """Guess the scan type from the shape of the input; None if nothing fits.
-
-        contains @ (name@host.tld)   -> email
-        http(s)://...  or an IP      -> reputation
-        name.with.dots / www.        -> domain
-        anything else handle-shaped  -> username
-
-    Detection only picks the module - the module's validator still decides
-    whether the value is acceptable (e.g. a private IP is detected as
-    'reputation' and then rejected).
-    """
     if not isinstance(value, str) or not value.strip():
         return None
     q = value.strip()
     if EMAIL_SHAPE_RE.match(q):
         return "email"
+    if HASH_RE.fullmatch(q):
+        return "reputation"
     if q.lower().startswith(("http://", "https://")) or _as_ip(q) is not None:
         return "reputation"
     if DOMAIN_SHAPE_RE.match(q) or q.lower().startswith("www."):
