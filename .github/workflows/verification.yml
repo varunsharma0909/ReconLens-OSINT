@@ -2,7 +2,7 @@ name: ReconLens verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/team-auth-audit]
   pull_request:
   workflow_dispatch:
 
