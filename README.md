@@ -55,7 +55,7 @@ For comparative evaluation, prepare a labelled CSV using `tests/benchmark_templa
 python tests/evaluate_osint.py tests/my_results.csv
 ```
 
-The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with accuracy/precision/recall **1.000** and local Flask test-client median/max **5.0/7.8 ms** in [GitHub Actions run #45222088362](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362). **These are demo fixture consistency results, not real-world predictive accuracy.** For real benchmarks, record accuracy, precision, recall, false-positive rate, median and maximum response time. Compare tools only on overlapping supported target types and the same ground-truth set. Do not invent benchmark results; document API coverage, quotas, timestamps and unavailable responses. See `docs/OSINT_EVALUATION.md`.
+The eight fictional fixture scenarios produced **TP=4, FP=0, TN=4, FN=0**, with accuracy/precision/recall **1.000** and local Flask test-client median/max **5.0/7.8 ms** in [GitHub Actions run #45222088362](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222088362). **These are demo fixture consistency results, not real-world predictive accuracy.** A second [verification run](https://github.com/varunsharma0909/ReconLens-OSINT/actions/runs/45222389273) captured all eight measured rows in `tests/benchmark_demo_results.csv` and two local HTTP demo timings per scan type (domain median 15 ms; username/email/reputation 5 ms). For real benchmarks, record accuracy, precision, recall, false-positive rate, median and maximum response time. Compare tools only on overlapping supported target types and the same ground-truth set. Do not invent benchmark results; document API coverage, quotas, timestamps and unavailable responses. See `docs/OSINT_EVALUATION.md`.
 
 ### Privacy safeguards
 
@@ -221,7 +221,7 @@ Browser → `POST /api/scan/<type>` (JSON) → validation, rate limit, authorisa
 collectors run **in parallel**, each with its own timeout → findings in one common format →
 score + recommendations + limitations → saved in SQLite → turned into a relationship graph
 (services/graph.py) → rendered in the browser → exported as PDF/CSV. Stored scans can be
-merged into one investigation graph via `GET /api/graph`. Full diagrams: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). API reference:
+merged into one investigation graph via `GET /api/graph`. Full diagrams: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [current system architecture](docs/diagrams/09_current_system_architecture.svg) and [reputation-provider routing](docs/diagrams/08_reputation_provider_routing.svg). API reference:
 [`docs/API.md`](docs/API.md). Test plan: [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md).
 
 ### Adding a new OSINT source
