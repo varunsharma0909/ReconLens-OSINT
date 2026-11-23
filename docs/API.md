@@ -100,6 +100,7 @@ Failures of an individual OSINT source are **not** HTTP errors: the scan still r
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/scans?limit=50&type=domain` | History, newest first. `limit` 1-200, optional `type` |
+| GET | `/api/scans.csv?limit=200&type=domain` | Download CSV of up to 200 newest masked scan summaries (optional type); formula-safe |
 | GET | `/api/scans/<id>` | One scan with findings (same shape as the scan response) |
 | DELETE | `/api/scans/<id>` | Delete a scan and its findings → `{"ok": true, "deleted": id}` |
 | GET | `/api/scans/<id>/report.pdf` | PDF report (attachment) |
