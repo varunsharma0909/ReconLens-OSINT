@@ -1,0 +1,9 @@
+scenario_id,expected_threat,predicted_threat,response_ms
+domain_weak,1,1,5.607
+domain_strong,0,0,4.223
+username_reused,1,1,3.661
+username_low,0,0,3.490
+email_exposed,1,1,3.140
+email_clean,0,0,2.948
+reputation_flagged,1,1,20.810
+reputation_clean,0,0,4.774
