@@ -17,10 +17,14 @@
         <p><label for="username">Username</label>
         <input id="username" name="username" autocomplete="username" required maxlength="40"></p>
         <p><label for="password">Password</label>
-        <input id="password" type="password" name="password" autocomplete="current-password" required></p>
+        <span class="password-field">
+          <input id="password" type="password" name="password" autocomplete="current-password" required>
+          <button type="button" id="toggle-password" class="password-toggle" aria-controls="password" aria-pressed="false" aria-label="Show password">Show</button>
+        </span></p>
         <button type="submit" class="btn btn-primary">Sign in</button>
       </form>
     </section>
   </main>
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>
