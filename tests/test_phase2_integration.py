@@ -38,6 +38,8 @@ def test_postgres_persistence_security_and_redis():
     client = app.test_client()
     assert client.get("/api/scans").status_code == 401
     assert client.get("/login").status_code == 200
+    # Actual rate-limit requests must write counters into Redis.
+    assert redis.from_url(cache).dbsize() > 0
     with client.session_transaction() as state:
         token = state["csrf_token"]
     assert client.post("/login", data={
