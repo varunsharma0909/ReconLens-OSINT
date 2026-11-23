@@ -21,7 +21,7 @@ Header `Content-Type: application/json` is **required** (otherwise HTTP 415).
 
 | Field | Type | Rules |
 |---|---|---|
-| `target` | string | domain: valid hostname (URLs accepted, host extracted, IDN converted); username: 2-39 chars `[A-Za-z0-9._-]`; email: single valid address; reputation: domain, **public** IP, or `http(s)://` URL |
+| `target` | string | domain: valid hostname (URLs accepted, host extracted, IDN converted); username: 2-39 chars `[A-Za-z0-9._-]`; email: single valid address; reputation: domain, **public** IP, `http(s)://` URL, or 32/40/64-character hexadecimal MD5/SHA-1/SHA-256 hash |
 | `mode` | `"demo"` or `"live"` | default `"demo"`; demo mode only accepts the fictional demo targets |
 | `authorized` | boolean | must be literally `true` in live mode |
 
@@ -78,7 +78,7 @@ Header `Content-Type: application/json` is **required** (otherwise HTTP 415).
 | 400 | `bad_mode` | mode not demo/live |
 | 400 | `invalid_input` | validation failed |
 | 400 | `not_a_demo_target` | demo mode with a non-demo target (response includes `demo_targets`) |
-| 400 | `virustotal_key_missing` | live reputation check without `VIRUSTOTAL_API_KEY` |
+| 400 | `reputation_keys_missing` | no configured provider supports the requested live reputation target |
 | 400 | `undetectable_target` | `/api/scan/auto`: the value is not domain-, email-, IP/URL- or username-shaped |
 | 403 | `authorization_required` | live mode without `"authorized": true` |
 | 403 | `live_disabled` | `ALLOW_LIVE_MODE=false` |
@@ -130,7 +130,7 @@ For emails `normalised` is always `null` so the address is never echoed back.
 
 Same body and response as the scan endpoints (`target`, `mode`, `authorized`); the detected
 module runs with **all** of its usual safeguards (validation, demo-target check,
-authorisation, XposedOrNot/VirusTotal policies, `SCAN_RATE_LIMIT`). In demo mode a domain-shaped
+authorisation, XposedOrNot/reputation-provider policies, `SCAN_RATE_LIMIT`). In demo mode a domain-shaped
 value that is only a reputation demo target (`phish-login.demo-corp.test`) runs the
 reputation module. The response's `scan.scan_type` shows which module ran.
 
@@ -153,7 +153,11 @@ curl -X POST http://127.0.0.1:5000/api/scan/auto -H "Content-Type: application/j
 | username | `USERNAME_FOUND`, `USERNAME_NOT_FOUND`, `USERNAME_INCONCLUSIVE`, `USERNAME_REUSE` |
 | XposedOrNot | `XON_EXPOSURE_SUMMARY`, `XON_BREACH`, `XON_NO_BREACH` |
 | tls | `TLS_CERT`, `TLS_EXPIRY_SOON`, `TLS_EXPIRED`, `TLS_UNTRUSTED`, `TLS_HANDSHAKE_FAILED`, `TLS_NO_HTTPS` |
-| virustotal | `VT_MALICIOUS`, `VT_SUSPICIOUS`, `VT_CLEAN`, `VT_STATS`, `VT_COMMUNITY_SCORE`, `VT_CATEGORIES`, `VT_NETWORK`, `VT_NOT_FOUND` |
+| virustotal | `VT_MALICIOUS`, `VT_SUSPICIOUS`, `VT_CLEAN`, `VT_STATS`, `VT_COMMUNITY_SCORE`, `VT_CATEGORIES`, `VT_NETWORK`, `VT_NOT_FOUND` (domain/IP/URL/hash) |
+| urlhaus | `URLHAUS_MALICIOUS_URL`, `URLHAUS_HOST_MATCH`, `URLHAUS_NOT_FOUND` |
+| threatfox | `THREATFOX_IOC_MATCH`, `THREATFOX_NOT_FOUND` |
+| malwarebazaar | `MALWAREBAZAAR_HASH_MATCH`, `MALWAREBAZAAR_NOT_FOUND` |
+| abuseipdb | `ABUSEIPDB_REPORTED`, `ABUSEIPDB_NOT_FOUND` |
 | any | `<MODULE>_ERROR` - the source could not be queried |
 
 
@@ -175,3 +179,18 @@ Relationship graph of one scan. Also included as `scan.graph` in every scan resp
 ### `GET /api/graph?ids=1,2,3` (or `?limit=20` for the most recent scans)
 Merges scans into one correlated investigation graph. `stats.shared_nodes` counts entities
 discovered while investigating more than one different target. `ids` must be integers (400 otherwise).
+
+## Live reputation provider selection
+
+Collectors run only for relevant target types and when their provider keys are configured.
+
+| Target | Candidate sources |
+|---|---|
+| Domain / URL | VirusTotal, URLhaus, ThreatFox (source-specific IOC support) |
+| Public IP | VirusTotal, ThreatFox, AbuseIPDB |
+| MD5 or SHA-256 | VirusTotal, ThreatFox, MalwareBazaar |
+| SHA-1 | VirusTotal, MalwareBazaar |
+
+Configure `VIRUSTOTAL_API_KEY` for VirusTotal, `ABUSE_CH_AUTH_KEY` for URLhaus/ThreatFox/MalwareBazaar, and `ABUSEIPDB_API_KEY` for AbuseIPDB. Keys are server-side only. A provider lookup is read-only; `not_found` means only that the specific provider did not report a match, **not** that the target is safe. Rate limits or upstream failures are source-specific errors.
+
+The `/api/health` response only exposes its existing configuration indicators; never return API key values to clients.
