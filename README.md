@@ -33,7 +33,9 @@ B.E. Computer Science · Minor Discipline Course (MDC) Cybersecurity project.
 | Domain intelligence | RDAP (IANA bootstrap) with WHOIS fallback, DNS, crt.sh, TLS certificate | No |
 | Username footprint | 19 public platforms (`collectors/sites.json`) | No |
 | Email exposure | XposedOrNot public API | No API key required |
-| IP / URL reputation | VirusTotal API v3 | Free community key |
+| Domain / URL reputation | VirusTotal, URLhaus, ThreatFox (when applicable) | VirusTotal and abuse.ch keys for their respective sources |
+| Public IP reputation | VirusTotal, ThreatFox, AbuseIPDB | Provider-specific keys |
+| File-hash reputation (MD5/SHA-1/SHA-256) | VirusTotal, MalwareBazaar; ThreatFox for supported hashes | VirusTotal / abuse.ch keys |
 
 **Demo mode** works fully offline with fictional `.test` targets, so the project can be
 presented without the internet and without analysing anyone real.
@@ -122,8 +124,19 @@ it (the server also enforces this). Only analyse assets you own or are authorise
 | Your own domain, or `example.com` (reserved for documentation, RFC 2606) | Nothing |
 | Your own username | Nothing |
 | Any email address you own or are authorised to assess | No API key required |
-|  |
-| Any public domain / IP / URL reputation | `VIRUSTOTAL_API_KEY` (free account at virustotal.com) in `.env` |
+| Public domain / IP / URL / file hash reputation | Configure the relevant provider keys below; at least one supported provider must be configured |
+
+### Reputation provider keys
+
+Copy `.env.example` to `.env`, or configure the equivalent environment variables in Render:
+
+| Environment variable | Used for |
+|---|---|
+| `VIRUSTOTAL_API_KEY` | VirusTotal v3 domain, IP, URL and file-hash lookups |
+| `ABUSE_CH_AUTH_KEY` | abuse.ch URLhaus, ThreatFox and MalwareBazaar read-only queries |
+| `ABUSEIPDB_API_KEY` | AbuseIPDB public-IP abuse reports |
+
+Never commit actual keys. Missing keys skip the corresponding source; a *live reputation* scan must have at least one applicable configured provider. No key is needed for demo mode. Google Public DNS and Cloudflare DNS public DoH queries do not require API keys.
 
 After editing `.env`, stop the server (CTRL+C) and start it again.
 
@@ -134,9 +147,10 @@ venv\Scripts\activate
 python -m pytest -v
 ```
 
-or double-click `run_tests.bat`. The suite (132 tests) uses mocked network responses, so it
-needs no internet and never queries real targets. Expected last line:
-`132 passed in ...s`.
+or double-click `run_tests.bat`. The test suite uses mocked network responses, so it
+needs no internet and never queries real targets. **Record the actual count printed by pytest**;
+the number changes as tests are added. A previously documented `132 passed` was not verified
+against the current repository and must not be cited as a measured result.
 
 ## 5. Project structure
 
@@ -159,7 +173,11 @@ osint-dashboard/
 │   ├── username_collector.py Username checks, confirmed / not found / inconclusive
 │   ├── sites.json            Curated platform list for username checks
 │   ├── xposedornot_collector.py     XposedOrNot email exposure records
-│   ├── vt_collector.py       VirusTotal reputation (+ local 4/min quota guard)
+│   ├── vt_collector.py       VirusTotal domain/IP/URL/hash reputation (+ quota guard)
+│   ├── urlhaus_collector.py  abuse.ch URLhaus URL/host lookups
+│   ├── threatfox_collector.py abuse.ch ThreatFox IOC/hash lookups
+│   ├── malwarebazaar_collector.py abuse.ch MalwareBazaar file-hash lookups
+│   ├── abuseipdb_collector.py AbuseIPDB public-IP lookups
 │   ├── tls_collector.py      TLS certificate via one HTTPS handshake (SSRF-safe)
 │   └── demo_data.py          Fictional fixtures for safe demo mode
 ├── services/
@@ -188,7 +206,7 @@ osint-dashboard/
 │   │                         vendor/cytoscape.min.js (Cytoscape.js, MIT)
 │   └── fonts/                Red Hat Display, Public Sans, IBM Plex Mono (SIL OFL) - served locally
 ├── logs/                     app.log (rotating)
-├── tests/                    pytest suite
+├── tests/                    pytest suite, mocked threat-source tests, benchmark tools
 └── docs/                     Architecture diagrams, API reference, test plan
 ```
 
@@ -266,5 +284,5 @@ No changes are needed in the database, UI or reports.
 
 Chart.js (MIT), Cytoscape.js (MIT), Red Hat Display, Public Sans and IBM Plex Mono (SIL Open Font License), Flask, dnspython,
 requests, Flask-Limiter, python-dotenv, ReportLab. Username detection approach adapted
-from the open-source Sherlock project. Data from IANA/ICANN RDAP, crt.sh, XposedOrNot
-and VirusTotal is subject to each provider's terms of use.
+from the open-source Sherlock project. Data from IANA/ICANN RDAP, crt.sh, XposedOrNot, VirusTotal, abuse.ch
+(URLhaus, ThreatFox and MalwareBazaar) and AbuseIPDB is subject to each provider's terms of use.
