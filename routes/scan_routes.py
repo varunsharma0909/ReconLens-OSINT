@@ -10,11 +10,15 @@ routes/scan_routes.py - Read/delete stored scans, statistics, health.
     GET    /api/scans/<id>/graph    relationship graph of one scan
     GET    /api/graph?limit=&ids=   correlated investigation graph across stored scans
 """
-from flask import Blueprint, current_app, jsonify, request
+import csv
+import io
+
+from flask import Blueprint, Response, current_app, jsonify, request
 
 from collectors.demo_data import DEMO_TARGETS
 from database.db import delete_scan, get_scan, get_stats, list_scans
 from services.graph import build_case_graph, build_graph
+from services.report import safe_cell
 
 from .common import ApiError
 
@@ -51,6 +55,32 @@ def scans():
     except ValueError:
         raise ApiError(400, "bad_limit", "limit must be a number.")
     return jsonify({"ok": True, "scans": list_scans(limit, scan_type)})
+
+
+@bp.get("/scans.csv")
+def history_csv():
+    """Download up to 200 newest scan summaries, with optional type filter.
+
+    Uses the same bounds and validation as GET /api/scans; the CSV is
+    formula-neutralised and includes only already-masked stored targets.
+    """
+    scan_type = request.args.get("type") or None
+    if scan_type and scan_type not in DEMO_TARGETS:
+        raise ApiError(400, "bad_type", "type must be domain, username, email or reputation.")
+    try:
+        limit = max(1, min(200, int(request.args.get("limit", 200))))
+    except ValueError:
+        raise ApiError(400, "bad_limit", "limit must be a number.")
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    columns = ("id", "scan_type", "target", "mode", "status", "exposure_score",
+               "exposure_level", "started_at", "completed_at", "duration_ms", "finding_count")
+    writer.writerow(columns)
+    for scan in list_scans(limit, scan_type):
+        writer.writerow([safe_cell(scan.get(key)) for key in columns])
+    response = Response("\ufeff" + buf.getvalue(), mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = 'attachment; filename="reconlens-scan-history.csv"'
+    return response
 
 
 @bp.get("/scans/<int:scan_id>")
