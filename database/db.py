@@ -14,6 +14,44 @@ from flask import current_app, g
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
+POSTGRES_SCHEMA_PATH = Path(__file__).resolve().parent / "schema_postgres.sql"
+
+class PgRow(dict):
+    """Compatibility with both row['field'] and row[0] access."""
+    def __getitem__(self, key):
+        return tuple(self.values())[key] if isinstance(key, int) else super().__getitem__(key)
+
+class PgCursor:
+    def __init__(self, cursor):
+        self.cursor = cursor
+        self.rowcount = cursor.rowcount
+    def fetchone(self):
+        row = self.cursor.fetchone()
+        return PgRow(row) if row is not None else None
+    def fetchall(self):
+        return [PgRow(row) for row in self.cursor.fetchall()]
+    def __iter__(self):
+        return (PgRow(row) for row in self.cursor)
+
+class PgConnection:
+    """Parameterised PostgreSQL adapter for existing query functions."""
+    def __init__(self, url):
+        import psycopg
+        from psycopg.rows import dict_row
+        self.conn = psycopg.connect(url, row_factory=dict_row, connect_timeout=10)
+    def execute(self, sql, params=()):
+        return PgCursor(self.conn.execute(sql.replace("?", "%s"), params))
+    def executemany(self, sql, values):
+        with self.conn.cursor() as cur:
+            cur.executemany(sql.replace("?", "%s"), values)
+    def commit(self):
+        self.conn.commit()
+    def rollback(self):
+        self.conn.rollback()
+    def close(self):
+        self.conn.close()
+
+
 
 def _connect(path: str) -> sqlite3.Connection:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -23,10 +61,11 @@ def _connect(path: str) -> sqlite3.Connection:
     return conn
 
 
-def get_db() -> sqlite3.Connection:
+def get_db():
     """One connection per request, stored on Flask's `g` object."""
     if "db" not in g:
-        g.db = _connect(current_app.config["DATABASE_PATH"])
+        url = current_app.config.get("DATABASE_URL")
+        g.db = PgConnection(url) if url else _connect(current_app.config["DATABASE_PATH"])
     return g.db
 
 
@@ -38,15 +77,33 @@ def close_db(_exc=None):
 
 def init_db(app):
     """Create tables (if missing) and apply the data-retention policy."""
-    with _connect(app.config["DATABASE_PATH"]) as conn:
-        conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
-        columns = {row[1] for row in conn.execute("PRAGMA table_info(scans)")}
-        if "owner_id" not in columns:
-            conn.execute("ALTER TABLE scans ADD COLUMN owner_id INTEGER REFERENCES users(id)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_scans_owner ON scans(owner_id, id)")
-        removed = purge_old_scans(conn, app.config["RETENTION_DAYS"])
-        if removed:
-            app.logger.info("Retention policy removed %d old scan(s)", removed)
+
+    url = app.config.get("DATABASE_URL")
+    if url:
+        conn = PgConnection(url)
+        try:
+            for statement in POSTGRES_SCHEMA_PATH.read_text(encoding="utf-8").split(";"):
+                if statement.strip():
+                    conn.execute(statement)
+            removed = purge_old_scans(conn, app.config["RETENTION_DAYS"])
+            conn.commit()
+            if removed:
+                app.logger.info("Retention policy removed %d old scan(s)", removed)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+    else:
+        with _connect(app.config["DATABASE_PATH"]) as conn:
+            conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(scans)")}
+            if "owner_id" not in columns:
+                conn.execute("ALTER TABLE scans ADD COLUMN owner_id INTEGER REFERENCES users(id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_scans_owner ON scans(owner_id, id)")
+            removed = purge_old_scans(conn, app.config["RETENTION_DAYS"])
+            if removed:
+                app.logger.info("Retention policy removed %d old scan(s)", removed)
     app.teardown_appcontext(close_db)
 
 
@@ -63,7 +120,8 @@ def save_scan(scan: dict, owner_id: int | None = None) -> int:
         """INSERT INTO scans (scan_type, target, mode, status, exposure_score,
                exposure_level, authorization, started_at, completed_at, duration_ms,
                modules_json, recommendations_json, limitations_json, scoring_json, owner_id)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""" +
+        (" RETURNING id" if current_app.config.get("DATABASE_URL") else ""),
         (
             scan["scan_type"], scan["target"], scan["mode"], scan["status"],
             scan["exposure_score"], scan["exposure_level"], scan.get("authorization"),
@@ -72,7 +130,7 @@ def save_scan(scan: dict, owner_id: int | None = None) -> int:
             json.dumps(scan["limitations"]), json.dumps(scan["scoring"]), owner_id,
         ),
     )
-    scan_id = cur.lastrowid
+    scan_id = cur.fetchone()["id"] if current_app.config.get("DATABASE_URL") else cur.lastrowid
     db.executemany(
         """INSERT INTO findings (scan_id, module, source, code, title, value, status,
                severity, source_url, collected_at, details_json)
