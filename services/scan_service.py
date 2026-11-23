@@ -32,7 +32,6 @@ COLLECTORS = {
     "domain": [RdapCollector, DnsCollector, CrtshCollector, TlsCollector],
     "username": [UsernameCollector],
     "email": [XposedOrNotCollector],
-    # Reputation collectors are selected by target type in collectors_for().
     "reputation": [],
 }
 
@@ -45,6 +44,7 @@ LIMITATIONS = {
         "DNS answers reflect the resolver used at scan time and may be cached.",
         "The TLS check performs one standard HTTPS handshake on port 443 to read the certificate.",
         "No active scanning (ports, vulnerabilities) is performed - this is passive OSINT only.",
+        "When provider keys are configured, domain scans also query VirusTotal, URLhaus and ThreatFox.",
     ],
     "username": [
         "Only the platforms listed in collectors/sites.json are checked.",
@@ -61,7 +61,7 @@ LIMITATIONS = {
         "Reputation results are vendor intelligence, not proof that a target is malicious.",
         "Only existing records are queried. ReconLens does not submit URLs, files, IOCs or abuse reports.",
         "URLhaus checks URLs or hostnames; it does not provide file-hash lookup in this integration.",
-        "ThreatFox checks exact IOC matches and supported file hashes. IOCs older than its retention window may not appear.",
+        "ThreatFox checks exact IOC matches and supported file hashes. Older IOCs may no longer appear in its API.",
         "MalwareBazaar is queried only for MD5, SHA1 or SHA256 hashes; no samples are downloaded.",
         "AbuseIPDB is queried only for public IP addresses, using a 90-day report window.",
         "A source returning no match does not prove the target is safe.",
@@ -84,22 +84,48 @@ def target_kind(target: str, scan_type: str) -> str:
         return "domain" if scan_type in ("domain", "reputation") else scan_type
 
 
-def collectors_for(scan_type: str, target: str):
+def collectors_for(scan_type: str, target: str, config: dict):
+    """Return only collectors supported by the target and configured API keys."""
+    if scan_type == "domain":
+        classes = list(COLLECTORS["domain"])
+        if config.get("VIRUSTOTAL_API_KEY"):
+            classes.append(VirusTotalCollector)
+        if config.get("ABUSE_CH_AUTH_KEY"):
+            classes.extend([URLhausCollector, ThreatFoxCollector])
+        return classes
+
     if scan_type != "reputation":
         return COLLECTORS[scan_type]
 
     kind = target_kind(target, scan_type)
     if kind in ("domain", "url"):
-        return [VirusTotalCollector, URLhausCollector, ThreatFoxCollector]
+        classes = []
+        if config.get("VIRUSTOTAL_API_KEY"):
+            classes.append(VirusTotalCollector)
+        if config.get("ABUSE_CH_AUTH_KEY"):
+            classes.extend([URLhausCollector, ThreatFoxCollector])
+        return classes
     if kind == "ip":
-        return [VirusTotalCollector, ThreatFoxCollector, AbuseIPDBCollector]
+        classes = []
+        if config.get("VIRUSTOTAL_API_KEY"):
+            classes.append(VirusTotalCollector)
+        if config.get("ABUSE_CH_AUTH_KEY"):
+            classes.append(ThreatFoxCollector)
+        if config.get("ABUSEIPDB_API_KEY"):
+            classes.append(AbuseIPDBCollector)
+        return classes
     if kind == "hash":
-        return [VirusTotalCollector, ThreatFoxCollector, MalwareBazaarCollector]
+        classes = []
+        if config.get("VIRUSTOTAL_API_KEY"):
+            classes.append(VirusTotalCollector)
+        if config.get("ABUSE_CH_AUTH_KEY"):
+            classes.extend([ThreatFoxCollector, MalwareBazaarCollector])
+        return classes
     return []
 
 
 def run_collectors(scan_type: str, target: str, config: dict):
-    classes = collectors_for(scan_type, target)
+    classes = collectors_for(scan_type, target, config)
     if not classes:
         return []
     collectors = [cls(config) for cls in classes]
