@@ -14,6 +14,8 @@ from extensions import limiter  # noqa: E402
 def app(tmp_path):
     application = create_app({
         "TESTING": True,
+        "SECRET_KEY": "test-only-stable-secret",
+        "AUTH_TEST_BYPASS": True,
         "DATABASE_PATH": str(tmp_path / "test.db"),
         "SCAN_RATE_LIMIT": "1000 per minute",
         "ALLOW_LIVE_MODE": True,
