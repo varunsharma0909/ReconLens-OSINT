@@ -13,7 +13,8 @@ if %errorlevel%==0 (
   set "PY=python"
 )
 echo Preparing local environment...
-%PY% prepare_local_env.py\nif errorlevel 1 goto :failed
+%PY% prepare_local_env.py
+if errorlevel 1 goto :failed
 if not exist ".venv\Scripts\python.exe" (
   echo [1/4] Creating virtual environment...
   %PY% -m venv .venv
