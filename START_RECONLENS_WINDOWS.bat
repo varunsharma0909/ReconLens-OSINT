@@ -12,11 +12,8 @@ if %errorlevel%==0 (
 ) else (
   set "PY=python"
 )
-if not exist ".env" (
-  echo ERROR: .env is missing. Please re-download the complete test ZIP.
-  pause
-  exit /b 1
-)
+echo Preparing local environment...
+%PY% prepare_local_env.py\nif errorlevel 1 goto :failed
 if not exist ".venv\Scripts\python.exe" (
   echo [1/4] Creating virtual environment...
   %PY% -m venv .venv
