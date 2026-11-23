@@ -92,7 +92,7 @@ We followed a **prototype-based (design-science) approach**:
 2. **Pick safe, legal, reliable sources** - official APIs and public records only.
 3. **Design** the architecture and a common data format.
 4. **Build** in small iterations (one module at a time).
-5. **Test** every part automatically (153 automated tests (verified in GitHub Actions)) and manually (test plan).
+5. **Test** every part automatically (156 automated tests (verified in GitHub Actions)) and manually (test plan).
 6. **Evaluate** with clear measures: pass rate, response time, report completeness.
 
 ### 5.2 The OSINT intelligence cycle (the core method)
@@ -468,7 +468,7 @@ so they cannot be skipped by someone using the API directly."*
 
 ## 12. Testing
 
-- **153 automated tests (GitHub Actions, 23 Nov 2026)** with `pytest` (record actual run duration), **no internet needed**. Network
+- **156 automated tests (GitHub Actions, 23 Nov 2026)** with `pytest` (record actual run duration), **no internet needed**. Network
   answers are replaced by fake ("mocked") answers.
 - What they cover:
   - input validation (good and bad inputs, injection attempts)
@@ -478,7 +478,7 @@ so they cannot be skipped by someone using the API directly."*
     rate limits, CSV injection)
   - the full API, database, reports, graph and correlation
 - Manual test plan: `docs/TEST_PLAN.md` (functional, invalid input, security, errors, performance).
-- Run: `run_tests.bat` → `153 passed (GitHub Actions run #45222088362)`.
+- Run: `run_tests.bat` → `156 passed (GitHub Actions run #45226376678)`.
 
 ---
 
@@ -539,4 +539,4 @@ Write one collector class returning Findings, add it to `COLLECTORS` in
 
 ### Current verification note (23 November 2026)
 
-The legacy fixed claim of `132 passed` was incorrect. GitHub Actions run #45222088362 verified **153 passed in 1.36s** with Python 3.12 on 23 November 2026. Run `python -m pytest -q` again when making further code changes. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
+The legacy fixed claim of `132 passed` was incorrect. GitHub Actions run #45226376678 verified **156 passed in 1.10s** with Python 3.12 on 23 November 2026. Run `python -m pytest -q` again when making further code changes. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
