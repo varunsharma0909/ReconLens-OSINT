@@ -116,3 +116,21 @@ def test_wrong_password_does_not_create_session(tmp_path):
         "username": "alice", "password": "bad", "csrf_token": token})
     assert response.status_code == 401
     assert client.get("/api/scans").status_code == 401
+
+
+def test_login_password_toggle_and_visible_logout(tmp_path):
+    app = private_app(tmp_path)
+    client = app.test_client()
+    login_page = client.get("/login")
+    assert login_page.status_code == 200
+    assert b'id="toggle-password"' in login_page.data
+    assert b'js/login.js' in login_page.data
+    assert b'aria-label="Show password"' in login_page.data
+    assert login(client, "alice").status_code == 302
+    page = client.get("/")
+    assert page.status_code == 200
+    assert b'class="header-logout"' in page.data
+    assert b'class="sidebar-logout"' in page.data
+    assert page.data.count(b'action="/logout"') == 2
+    assert page.data.count(b'Log out</button>') == 2
+    assert client.post("/logout", headers=csrf(client)).status_code == 302
