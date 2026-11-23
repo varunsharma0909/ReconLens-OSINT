@@ -8,6 +8,15 @@ on:
       - 'START_RECONLENS_WINDOWS.bat'
       - 'prepare_local_env.py'
       - 'security.py'
+      - 'database/**'
+      - 'config.py'
+      - 'app.py'
+      - 'extensions.py'
+      - 'requirements.txt'
+      - 'render.yaml'
+      - 'docs/PHASE2_POSTGRES_REDIS_RENDER.md'
+      - 'scripts/**'
+      - 'tests/test_phase2_integration.py'
       - 'templates/login.html'
       - 'templates/base.html'
       - 'static/js/login.js'
@@ -28,7 +37,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
           root = Path.cwd()
-          out = root / "ReconLens-Phase1-Windows-Ready.zip"
+          out = root / "ReconLens-Phase2-Windows-Ready.zip"
           exclude = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", "logs"}
           with ZipFile(out, "w", ZIP_DEFLATED, compresslevel=6) as z:
               for p in root.rglob("*"):
@@ -36,19 +45,19 @@ jobs:
                       continue
                   if p == out or p.name == ".env" or p.suffix in {".db", ".pyc"}:
                       continue
-                  z.write(p, arcname="ReconLens-Phase1/" + p.relative_to(root).as_posix())
-              z.writestr("ReconLens-Phase1/.env", "SECRET_KEY=\nSESSION_COOKIE_SECURE=false\nALLOW_LIVE_MODE=false\n")
+                  z.write(p, arcname="ReconLens-Phase2/" + p.relative_to(root).as_posix())
+              z.writestr("ReconLens-Phase2/.env", "SECRET_KEY=\nSESSION_COOKIE_SECURE=false\nALLOW_LIVE_MODE=false\n")
           with ZipFile(out) as z:
               assert z.testzip() is None
-              assert "ReconLens-Phase1/.env" in z.namelist()
-              assert "ReconLens-Phase1/START_RECONLENS_WINDOWS.bat" in z.namelist()
-              assert "ReconLens-Phase1/app.py" in z.namelist()
-              assert "ReconLens-Phase1/security.py" in z.namelist()
+              assert "ReconLens-Phase2/.env" in z.namelist()
+              assert "ReconLens-Phase2/START_RECONLENS_WINDOWS.bat" in z.namelist()
+              assert "ReconLens-Phase2/app.py" in z.namelist()
+              assert "ReconLens-Phase2/security.py" in z.namelist()
           print(f"Built {out.name}: {out.stat().st_size} bytes")
           PY
       - name: Upload ready-to-test project ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: ReconLens-Phase1-Windows-Ready
-          path: ReconLens-Phase1-Windows-Ready.zip
+          name: ReconLens-Phase2-Windows-Ready
+          path: ReconLens-Phase2-Windows-Ready.zip
           retention-days: 30
