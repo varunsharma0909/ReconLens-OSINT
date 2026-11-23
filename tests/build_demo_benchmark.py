@@ -39,10 +39,7 @@ def main():
     if {row["scenario_id"] for row in rows} != set(SCENARIOS):
         raise SystemExit("Benchmark manifest does not match the eight known fictional fixtures.")
 
-    app = create_app({"TESTING": True, "DATABASE_PATH": ":memory:",
-                      "SCAN_RATE_LIMIT": "1000 per minute", "ALLOW_LIVE_MODE": True})
-    # SQLite :memory: creates a separate database per connection. Use an isolated
-    # file instead; no production data or user accounts are accessed.
+    # Run against an isolated SQLite file; do not touch the production database.
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         app = create_app({"TESTING": True, "DATABASE_PATH": str(Path(tmp) / "benchmark.db"),
