@@ -22,6 +22,7 @@ from database.db import get_scan, save_scan
 from services.graph import build_graph
 from services.scan_service import run_scan
 from services.validation import VALIDATORS, ValidationError, mask_email
+from security import audit, current_user
 
 AUTH_STATEMENT = ("Operator confirmed they own '{target}' or have explicit permission to "
                   "assess it, and will use results only for defensive purposes.")
@@ -85,7 +86,8 @@ def handle_scan(scan_type: str, live_policy=None):
         authorization = AUTH_STATEMENT.format(target=shown)
 
     scan = run_scan(scan_type, target, mode, scan_config(), authorization)
-    scan_id = save_scan(scan)
+    scan_id = save_scan(scan, owner_id=(current_user() or {}).get("id"))
+    audit("scan_created", f"scan:{scan_id}")
     current_app.logger.info(
         "scan id=%s type=%s mode=%s target=%s status=%s score=%s duration=%sms",
         scan_id, scan_type, mode, scan["target"], scan["status"],
