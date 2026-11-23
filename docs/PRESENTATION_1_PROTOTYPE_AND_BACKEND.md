@@ -92,7 +92,7 @@ We followed a **prototype-based (design-science) approach**:
 2. **Pick safe, legal, reliable sources** - official APIs and public records only.
 3. **Design** the architecture and a common data format.
 4. **Build** in small iterations (one module at a time).
-5. **Test** every part automatically (132 tests) and manually (test plan).
+5. **Test** every part automatically (the current pytest suite (verify count before presentation)) and manually (test plan).
 6. **Evaluate** with clear measures: pass rate, response time, report completeness.
 
 ### 5.2 The OSINT intelligence cycle (the core method)
@@ -225,7 +225,7 @@ Example: you scan the demo domain **`demo-corp.test`**.
 ### 9.2 `config.py` and `.env` - the settings
 
 All settings come from a `.env` file, so secrets like API keys are **never written in the
-code**. Examples: `XposedOrNot_API_KEY`, `VIRUSTOTAL_API_KEY`, `ALLOW_LIVE_MODE`,
+code**. Examples: `VIRUSTOTAL_API_KEY`, `ABUSE_CH_AUTH_KEY`, `ABUSEIPDB_API_KEY`, `ALLOW_LIVE_MODE`,
 `SCAN_RATE_LIMIT=10 per minute`, `RETENTION_DAYS=30`, timeouts.
 
 ### 9.3 Routes - the API (the reception desk)
@@ -272,7 +272,7 @@ anything else handle-shaped   → username
 ### 9.5 The scan service - the manager (`services/scan_service.py`)
 
 - Picks collectors for the scan type:
-  domain → 4 collectors, username → 1, email → 1, reputation → 1.
+  domain → RDAP/DNS/crt.sh/TLS plus configured reputation sources; username → 1; email → 1; reputation → eligible configured API collectors.
 - Runs them **in parallel** with a thread pool - so the scan takes as long as the
   *slowest* source, not the sum of all sources.
 - Joins all findings, then calls scoring, recommendations and adds the **limitations**
@@ -309,7 +309,7 @@ collected_at 2026-10-27T10:15:00+00:00   ← when
 | **Inconclusive** | We could not tell (blocked, rate-limited, CAPTCHA, redacted) |
 | **Error** | The source failed (timeout, network problem) |
 
-**The seven collectors:**
+**The OSINT collectors (including newly integrated reputation services):**
 
 | Collector | How it works (simple) | Example findings |
 |---|---|---|
@@ -318,8 +318,13 @@ collected_at 2026-10-27T10:15:00+00:00   ← when
 | **crt.sh** (`crtsh_collector.py`) | Searches public certificate logs for `%.domain`. | Subdomain list; *sensitive-looking* names like `dev.`, `vpn.`, `admin.`; wildcard certificates; certificate authorities |
 | **TLS** (`tls_collector.py`) | Makes **one** normal HTTPS handshake (like a browser) and reads the certificate. Refuses private IPs. | Issuer, valid until, expired, expires within 14 days, untrusted (self-signed) |
 | **Username** (`username_collector.py`) | Visits the public profile URL on 19 platforms (6 at a time). 200 = found, 404 = not found, 403/429/CAPTCHA/login page = inconclusive. | Profile found on GitHub…; "same username reused on many platforms" (5+) |
-| **XposedOrNot** (`XposedOrNot_collector.py`) | Calls XposedOrNot API v3 with the email. | Each breach, date, leaked data types; passwords leaked = high |
+| **XposedOrNot** (`xposedornot_collector.py`) | Calls XposedOrNot API v3 with the email. | Each breach, date, leaked data types; passwords leaked = high |
 | **VirusTotal** (`vt_collector.py`) | Reads the **existing** report for a domain/IP/URL. Never submits new URLs (that would make them public). Local guard keeps to 4 requests/minute. | Malicious by 7 of 92 engines, suspicious, clean, vendor categories |
+
+| **URLhaus** (`urlhaus_collector.py`) | Read-only abuse.ch URL and host searches with `ABUSE_CH_AUTH_KEY`. | Known malware-distribution URL / host records |
+| **ThreatFox** (`threatfox_collector.py`) | Read-only IOC and supported hash searches with `ABUSE_CH_AUTH_KEY`. | Known indicators and malware-family information |
+| **MalwareBazaar** (`malwarebazaar_collector.py`) | Read-only hash metadata lookup with `ABUSE_CH_AUTH_KEY`, no sample downloads. | Malware hash match, file type, signature |
+| **AbuseIPDB** (`abuseipdb_collector.py`) | Read-only public IP check with `ABUSEIPDB_API_KEY`. | 90-day abuse reports and confidence score |
 
 **Demo mode** (`collectors/demo_data.py`) returns realistic but **fictional** results for
 `.test` targets, using the exact same Finding format, so everything after the collectors
@@ -462,7 +467,7 @@ so they cannot be skipped by someone using the API directly."*
 
 ## 12. Testing
 
-- **132 automated tests** with `pytest`, in about 2 seconds, **no internet needed**. Network
+- **automated tests (count to verify from current pytest output)** with `pytest` (record actual run duration), **no internet needed**. Network
   answers are replaced by fake ("mocked") answers.
 - What they cover:
   - input validation (good and bad inputs, injection attempts)
@@ -472,7 +477,7 @@ so they cannot be skipped by someone using the API directly."*
     rate limits, CSV injection)
   - the full API, database, reports, graph and correlation
 - Manual test plan: `docs/TEST_PLAN.md` (functional, invalid input, security, errors, performance).
-- Run: `run_tests.bat` → `132 passed`.
+- Run: `run_tests.bat` → `the actual pytest pass count (copy from your own run)`.
 
 ---
 
@@ -529,3 +534,8 @@ Zero setup, built into Python, enough for a single-user prototype; easy to swap 
 **Q: How would you add a new source?**
 Write one collector class returning Findings, add it to `COLLECTORS` in
 `scan_service.py`, optionally add recommendation rules. Nothing else changes.
+
+
+### Current verification note (23 November 2026)
+
+The legacy fixed claim of `132 passed` is unverified and has been removed. Run `python -m pytest -q` and copy the actual summary before submission. The newer URLhaus, ThreatFox, MalwareBazaar and AbuseIPDB collectors have dedicated mocked-response tests in `tests/test_threat_collectors.py`. Real-world comparison claims require independently labelled data; the eight-case demo benchmark is explicitly fictional and not comparable to production threat detection.
