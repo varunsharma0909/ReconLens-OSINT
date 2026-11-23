@@ -42,6 +42,10 @@ const OSINT = (() => {
   /* fetch wrapper: JSON in, JSON out, readable errors */
   async function api(path, { method = "GET", body } = {}) {
     const opts = { method, headers: { Accept: "application/json" } };
+    if (!["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
+      const token = document.querySelector('meta[name="csrf-token"]')?.content;
+      if (token) opts.headers["X-CSRF-Token"] = token;
+    }
     if (body !== undefined) {
       opts.headers["Content-Type"] = "application/json";
       opts.body = JSON.stringify(body);
