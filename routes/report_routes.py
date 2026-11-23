@@ -8,6 +8,7 @@ from flask import Blueprint, Response
 
 from database.db import get_scan
 from services.report import build_csv, build_pdf
+from security import audit, require_scan_access
 
 from .common import ApiError
 
@@ -18,7 +19,7 @@ def _load(scan_id: int) -> dict:
     scan = get_scan(scan_id)
     if scan is None:
         raise ApiError(404, "not_found", f"Scan {scan_id} does not exist.")
-    return scan
+    return require_scan_access(scan)
 
 
 def _filename(scan: dict, ext: str) -> str:
@@ -28,6 +29,7 @@ def _filename(scan: dict, ext: str) -> str:
 @bp.get("/<int:scan_id>/report.pdf")
 def report_pdf(scan_id: int):
     scan = _load(scan_id)
+    audit("report_pdf_downloaded", f"scan:{scan_id}")
     return Response(build_pdf(scan), mimetype="application/pdf", headers={
         "Content-Disposition": f'attachment; filename="{_filename(scan, "pdf")}"'})
 
@@ -35,6 +37,7 @@ def report_pdf(scan_id: int):
 @bp.get("/<int:scan_id>/report.csv")
 def report_csv(scan_id: int):
     scan = _load(scan_id)
+    audit("report_csv_downloaded", f"scan:{scan_id}")
     # UTF-8 BOM so Excel on Windows shows non-ASCII characters correctly
     return Response("﻿" + build_csv(scan), mimetype="text/csv", headers={
         "Content-Disposition": f'attachment; filename="{_filename(scan, "csv")}"'})
