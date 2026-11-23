@@ -118,7 +118,7 @@ def save_scan(scan: dict, owner_id: int | None = None) -> int:
     db = get_db()
     cur = db.execute(
         """INSERT INTO scans (scan_type, target, mode, status, exposure_score,
-               exposure_level, authorization, started_at, completed_at, duration_ms,
+               exposure_level, "authorization", started_at, completed_at, duration_ms,
                modules_json, recommendations_json, limitations_json, scoring_json, owner_id)
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""" +
         (" RETURNING id" if current_app.config.get("DATABASE_URL") else ""),
