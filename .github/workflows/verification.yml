@@ -1,0 +1,38 @@
+name: ReconLens verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run offline pytest suite and record exact count
+        run: |
+          set -o pipefail
+          python -m pytest -q 2>&1 | tee pytest-summary.txt
+      - name: Generate measured fictional demo benchmark
+        run: |
+          python tests/build_demo_benchmark.py | tee benchmark-summary.txt
+          python tests/evaluate_osint.py tests/benchmark_demo_results.csv
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconlens-verification
+          path: |
+            pytest-summary.txt
+            benchmark-summary.txt
+            tests/benchmark_demo_results.csv
+          if-no-files-found: warn
