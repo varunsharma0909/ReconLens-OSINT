@@ -1,0 +1,45 @@
+name: Real demo screenshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/screenshots.yml
+      - tests/capture_screenshots.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install application and screenshot dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install playwright pymupdf
+          python -m playwright install --with-deps chromium
+      - name: Capture genuine fictional-demo screenshots
+        run: python tests/capture_screenshots.py
+      - name: Upload screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconlens-demo-screenshots
+          path: docs/screenshots/*.png
+          if-no-files-found: warn
+      - name: Commit screenshot images back to the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots/*.png
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "docs: add real offline demo screenshots [skip ci]"
+          git push
