@@ -48,7 +48,7 @@ FIELDS = ["scenario", "fixture", "scan_type", "baseline_score",
 
 def evaluate():
     with tempfile.TemporaryDirectory() as directory:
-        app = create_app({"TESTING": True,
+        app = create_app({"TESTING": True, "AUTH_TEST_BYPASS": True, "SECRET_KEY": "test-only-stable-secret",
                           "DATABASE_PATH": str(Path(directory) / "sensitivity.db"),
                           "SCAN_RATE_LIMIT": "1000 per minute",
                           "VIRUSTOTAL_API_KEY": "", "ABUSE_CH_AUTH_KEY": "",
